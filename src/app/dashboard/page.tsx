@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import SpotifyImageDialog from '@/components/SpotifyImageDialog';
 
 interface PlaylistImage {
     url: string;
@@ -12,6 +13,7 @@ interface PlaylistImage {
 }
 
 interface PlaylistOwner {
+    id: string;
     display_name: string;
 }
 
@@ -33,10 +35,18 @@ interface Playlist {
     images?: PlaylistImage[];
 }
 
+interface SpotifyUser {
+    id: string;
+    display_name: string;
+}
+
 export default function Dashboard() {
     const [playlists, setPlaylists] = useState<Playlist[]>([]);
+    const [currentUser, setCurrentUser] = useState<SpotifyUser | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [showOnlyOwnedPlaylists, setShowOnlyOwnedPlaylists] = useState(false);
+    const [selectedImage, setSelectedImage] = useState<{ url: string, alt: string, name: string } | null>(null);
 
     const searchParams = useSearchParams();
     const accessToken = searchParams.get('access_token');
@@ -48,19 +58,34 @@ export default function Dashboard() {
             return;
         }
 
-        const fetchPlaylists = async () => {
+        const fetchUserAndPlaylists = async () => {
             try {
-                const response = await fetch('/api/playlists', {
+                // Fetch current user first
+                const userResponse = await fetch('https://api.spotify.com/v1/me', {
                     headers: {
                         Authorization: `Bearer ${accessToken}`,
                     },
                 });
 
-                if (!response.ok) {
+                if (!userResponse.ok) {
+                    throw new Error('Failed to fetch user information');
+                }
+
+                const userData = await userResponse.json();
+                setCurrentUser(userData);
+
+                // Then fetch playlists
+                const playlistsResponse = await fetch('/api/playlists', {
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                    },
+                });
+
+                if (!playlistsResponse.ok) {
                     throw new Error('Failed to fetch playlists');
                 }
 
-                const data = await response.json();
+                const data = await playlistsResponse.json();
                 const playlistsWithoutCovers = data.items || [];
 
                 const playlistsWithCovers = await Promise.all(
@@ -88,14 +113,33 @@ export default function Dashboard() {
                 setPlaylists(playlistsWithCovers);
                 setLoading(false);
             } catch (err) {
-                setError('Error fetching playlists. Please try again later.');
+                setError('Error fetching data. Please try again later.');
                 setLoading(false);
                 console.error(err);
             }
         };
 
-        fetchPlaylists();
+        fetchUserAndPlaylists();
     }, [accessToken]);
+
+    // Filter playlists based on ownership
+    const filteredPlaylists = showOnlyOwnedPlaylists && currentUser
+        ? playlists.filter(playlist => playlist.owner.id === currentUser.id)
+        : playlists;
+
+    // Open dialog with the selected image
+    const openImageDialog = (imageUrl: string, playlistName: string) => {
+        setSelectedImage({
+            url: imageUrl,
+            alt: `${playlistName} cover`,
+            name: playlistName
+        });
+    };
+
+    // Handle dialog open state change
+    const handleOpenChange = (open: boolean) => {
+        if (!open) setSelectedImage(null);
+    };
 
     if (loading) {
         return (
@@ -132,10 +176,36 @@ export default function Dashboard() {
                     </Link>
                 </div>
 
-                {playlists.length === 0 ? (
-                    <p className="text-lg">No playlists found in your account.</p>
+                {currentUser && (
+                    <div className="mb-6">
+                        <p className="mb-2">Logged in as: <span className="font-semibold">{currentUser.display_name}</span></p>
+                        <div className="flex items-center">
+                            <input
+                                type="checkbox"
+                                id="owned-filter"
+                                checked={showOnlyOwnedPlaylists}
+                                onChange={() => setShowOnlyOwnedPlaylists(!showOnlyOwnedPlaylists)}
+                                className="mr-2 h-4 w-4"
+                            />
+                            <label htmlFor="owned-filter" className="text-sm font-medium">
+                                Show only playlists I own
+                            </label>
+                        </div>
+                    </div>
+                )}
+
+                {filteredPlaylists.length === 0 ? (
+                    <p className="text-lg">
+                        {showOnlyOwnedPlaylists
+                            ? "You don't own any playlists. Disable the filter to see all playlists."
+                            : "No playlists found in your account."}
+                    </p>
                 ) : (
                     <div className="overflow-x-auto">
+                        <p className="mb-2 text-sm">
+                            Showing {filteredPlaylists.length} playlists
+                            {showOnlyOwnedPlaylists ? " (owned by you)" : ""}
+                        </p>
                         <table className="w-full border-collapse">
                             <thead className="bg-gray-100 dark:bg-gray-800">
                                 <tr>
@@ -147,11 +217,14 @@ export default function Dashboard() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {playlists.map((playlist) => (
+                                {filteredPlaylists.map((playlist) => (
                                     <tr key={playlist.id} className="hover:bg-gray-50 dark:hover:bg-gray-900">
                                         <td className="p-3 border border-gray-200 dark:border-gray-700 w-24">
                                             {playlist.images && playlist.images.length > 0 ? (
-                                                <div className="relative w-16 h-16">
+                                                <div
+                                                    className="relative w-16 h-16 cursor-pointer group"
+                                                    onClick={() => openImageDialog(playlist.images![0].url, playlist.name)}
+                                                >
                                                     <Image
                                                         src={playlist.images[0].url}
                                                         alt={`${playlist.name} cover`}
@@ -160,6 +233,11 @@ export default function Dashboard() {
                                                         style={{ objectFit: 'cover' }}
                                                         className="rounded"
                                                     />
+                                                    <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity rounded">
+                                                        <div className="text-white text-xs bg-black/50 px-2 py-1 rounded-full">
+                                                            View
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             ) : (
                                                 <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center">
@@ -177,7 +255,12 @@ export default function Dashboard() {
                                                 {playlist.name}
                                             </a>
                                         </td>
-                                        <td className="p-3 border border-gray-200 dark:border-gray-700">{playlist.owner.display_name}</td>
+                                        <td className="p-3 border border-gray-200 dark:border-gray-700">
+                                            {playlist.owner.display_name}
+                                            {currentUser && playlist.owner.id === currentUser.id && (
+                                                <span className="ml-1 text-xs bg-green-100 text-green-800 px-1 py-0.5 rounded">You</span>
+                                            )}
+                                        </td>
                                         <td className="p-3 border border-gray-200 dark:border-gray-700">{playlist.tracks.total}</td>
                                         <td className="p-3 border border-gray-200 dark:border-gray-700">{playlist.public ? 'Yes' : 'No'}</td>
                                     </tr>
@@ -187,6 +270,17 @@ export default function Dashboard() {
                     </div>
                 )}
             </div>
+
+            {/* Spotify-styled Image Dialog */}
+            {selectedImage && (
+                <SpotifyImageDialog
+                    isOpen={!!selectedImage}
+                    onOpenChange={handleOpenChange}
+                    imageUrl={selectedImage.url}
+                    altText={selectedImage.alt}
+                    playlistName={selectedImage.name}
+                />
+            )}
         </div>
     );
 }
