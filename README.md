@@ -1,36 +1,88 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-## Getting Started
+# 🎨 Playlist Cover Designer
 
-First, run the development server:
+A fun web app that lets users log in with **Spotify** and design custom cover art for their playlists.  
+Users can:
+- Pick from previous cover images
+- Generate new ones with AI prompts
+- Use a DIY Canva-style tool (coming soon!)
+
+---
+
+## 🚧 Status
+
+> **This project is a work in progress.**  
+We're actively building features and refining the UI. Feedback is welcome, but please be mindful this is not production-ready.
+
+---
+
+## 🔐 Setup
+
+### 1. Clone the repo
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/your-username/playlist-cover-designer.git
+cd playlist-cover-designer
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Install dependencies
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm install
+# or
+yarn install
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 3. Add environment variables
 
-## Learn More
+Create a `.env.local` file with your own API credentials:
 
-To learn more about Next.js, take a look at the following resources:
+```env
+NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
+SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+SPOTIFY_CLIENT_ID=your-spotify-client-id
+NEXT_PUBLIC_SPOTIFY_CLIENT_ID=your-spotify-client-id
+SPOTIFY_CLIENT_SECRET=your-spotify-client-secret
+SPOTIFY_REDIRECT_URI=http://127.0.0.1:3000/api/callback
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+NEXT_PUBLIC_STACK_PROJECT_ID=your-stack-project-id
+NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY=your-stack-publishable-client-key
+STACK_SECRET_SERVER_KEY=your-stack-secret-server-key
+```
 
-## Deploy on Vercel
+> 🔑 **Important:** You must supply your own Spotify and Supabase keys.  
+We do not include any API credentials in this repo.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 📦 Tech Stack
+
+- **Next.js** – Web app framework
+- **Supabase** – Database, storage, and auth
+- **Spotify API** – Playlist data and user auth
+- **Image Generation (AI)** – Coming soon
+
+---
+
+## ⚠️ License & Usage
+
+> This is a **public repository**, but **not open-source** for unrestricted use.
+
+All content and code is **copyright © Bohan**.
+
+You **may not** reuse, redistribute, or commercialize this project without express permission.
+
+---
+
+## 🙌 Contributions
+
+Feel free to fork and explore, but please contact the author before submitting PRs or using it elsewhere.
+
+---
+
+## 📬 Contact
+
+Questions? Ideas?  
+DM [@brian890809](https://github.com/brian890809) or open an issue.
