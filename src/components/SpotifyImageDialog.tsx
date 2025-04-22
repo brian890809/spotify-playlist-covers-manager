@@ -71,7 +71,7 @@ export default function SpotifyImageDialog({
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="bg-[#121212] border-[#333333] sm:max-w-7xl w-[98vw] p-0 overflow-hidden rounded-xl shadow-2xl">
+            <DialogContent className="bg-white dark:bg-[#121212] border-gray-300 dark:border-[#333333] sm:max-w-7xl w-[98vw] p-0 overflow-hidden rounded-xl shadow-2xl transition-colors duration-300">
                 <VisuallyHidden>
                     <DialogTitle>
                         Playlist Cover
@@ -82,10 +82,10 @@ export default function SpotifyImageDialog({
                 <div className="flex flex-col md:flex-row">
                     {/* Left column - Current Cover */}
                     <div className="w-full md:w-2/5 p-6 flex flex-col">
-                        <h3 className="text-white text-lg font-bold mb-4">Your Current Cover:</h3>
+                        <h3 className="text-gray-900 dark:text-white text-lg font-bold mb-4">Your Current Cover:</h3>
 
                         {/* Image container */}
-                        <div className="relative flex-grow flex items-center justify-center bg-[#1e1e1e] rounded-lg overflow-hidden">
+                        <div className="relative flex-grow flex items-center justify-center bg-gray-100 dark:bg-[#1e1e1e] rounded-lg overflow-hidden">
                             <Image
                                 src={imageUrl}
                                 alt={altText}
@@ -105,17 +105,17 @@ export default function SpotifyImageDialog({
                     </div>
 
                     {/* Right column - Edit options */}
-                    <div className={`w-full md:w-3/5 p-6 flex flex-col border-t md:border-t-0 md:border-l border-[#333333] ${!canEdit ? 'opacity-50 pointer-events-none' : ''}`}>
+                    <div className={`w-full md:w-3/5 p-6 flex flex-col border-t md:border-t-0 md:border-l border-gray-300 dark:border-[#333333] ${!canEdit ? 'opacity-50 pointer-events-none' : ''}`}>
 
                         {/* Recent changes */}
                         <div className="mb-6">
-                            <h3 className="text-white text-lg font-bold mb-4">Your recent changes:</h3>
+                            <h3 className="text-gray-900 dark:text-white text-lg font-bold mb-4">Your recent changes:</h3>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 {recentImages.length > 0 ? (
                                     recentImages.map((img, index) => (
                                         <div
                                             key={index}
-                                            className="aspect-square bg-[#1e1e1e] rounded-md overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+                                            className="aspect-square bg-gray-100 dark:bg-[#1e1e1e] rounded-md overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
                                         >
                                             <Image
                                                 src={img}
@@ -130,9 +130,9 @@ export default function SpotifyImageDialog({
                                     Array(4).fill(0).map((_, index) => (
                                         <div
                                             key={index}
-                                            className="aspect-square bg-[#1e1e1e] rounded-md flex items-center justify-center"
+                                            className="aspect-square bg-gray-100 dark:bg-[#1e1e1e] rounded-md flex items-center justify-center"
                                         >
-                                            <span className="text-[#777] text-xs">No history</span>
+                                            <span className="text-gray-500 dark:text-[#777] text-xs">No history</span>
                                         </div>
                                     ))
                                 )}
@@ -141,13 +141,13 @@ export default function SpotifyImageDialog({
 
                         {/* AI Prompt */}
                         <div className="mb-6">
-                            <h3 className="text-white text-lg font-bold mb-2">Create a Cover with AI prompt:</h3>
+                            <h3 className="text-gray-900 dark:text-white text-lg font-bold mb-2">Create a Cover with AI prompt:</h3>
                             <div className="flex gap-3">
                                 <input
                                     type="text"
                                     value={aiPrompt}
                                     onChange={(e) => setAiPrompt(e.target.value)}
-                                    className="flex-grow p-3 rounded-md bg-[#2a2a2a] text-white border border-[#333] focus:border-[#1DB954] focus:outline-none"
+                                    className="flex-grow p-3 rounded-md bg-gray-100 dark:bg-[#2a2a2a] text-gray-900 dark:text-white border border-gray-300 dark:border-[#333] focus:border-[#1DB954] focus:outline-none transition-colors"
                                     placeholder="Describe the cover you want..."
                                     disabled={!canEdit || isGenerating}
                                 />
@@ -163,7 +163,7 @@ export default function SpotifyImageDialog({
 
                         {/* Upload */}
                         <div className="mt-auto">
-                            <h3 className="text-white text-lg font-bold mb-4">Upload New Cover:</h3>
+                            <h3 className="text-gray-900 dark:text-white text-lg font-bold mb-4">Upload New Cover:</h3>
                             <label className="flex items-center w-fit mx-auto gap-2 bg-[#1DB954] hover:bg-[#1ed760] text-black font-bold py-2 px-4 rounded-full cursor-pointer transition-colors">
                                 <Upload size={18} />
                                 <span>Upload</span>
@@ -180,8 +180,8 @@ export default function SpotifyImageDialog({
                 </div>
 
                 {/* Close button styled to match Spotify */}
-                <DialogClose className="absolute top-4 right-4 z-10 rounded-full bg-black/60 hover:bg-black/70 p-2 transition-colors">
-                    <XIcon className="h-5 w-5 text-white" />
+                <DialogClose className="absolute top-4 right-4 z-10 rounded-full bg-gray-200/60 dark:bg-black/60 hover:bg-gray-200/80 dark:hover:bg-black/70 p-2 transition-colors">
+                    <XIcon className="h-5 w-5 text-gray-700 dark:text-white" />
                     <span className="sr-only">Close</span>
                 </DialogClose>
             </DialogContent>

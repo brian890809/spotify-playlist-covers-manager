@@ -49,23 +49,9 @@ export default function Dashboard() {
     const [error, setError] = useState<string | null>(null);
     const [showOnlyOwnedPlaylists, setShowOnlyOwnedPlaylists] = useState(false);
     const [selectedImage, setSelectedImage] = useState<{ url: string, alt: string, name: string, ownerId: string } | null>(null);
-    const [theme, setTheme] = useState<'light' | 'dark'>('dark');
 
     const searchParams = useSearchParams();
     const accessToken = searchParams.get('access_token');
-
-    useEffect(() => {
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        setTheme(prefersDark ? 'dark' : 'light');
-
-        document.documentElement.classList.toggle('dark', prefersDark);
-    }, []);
-
-    const toggleTheme = () => {
-        const newTheme = theme === 'dark' ? 'light' : 'dark';
-        setTheme(newTheme);
-        document.documentElement.classList.toggle('dark', newTheme === 'dark');
-    };
 
     useEffect(() => {
         if (!accessToken) {
@@ -187,13 +173,6 @@ export default function Dashboard() {
                     <h1 className="text-xl font-bold">
                         <span className="text-[#1DB954]">Spotify</span> Playlists
                     </h1>
-                    {/* <button
-                        onClick={toggleTheme}
-                        className="p-2 rounded-full bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors"
-                        aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
-                    >
-                        {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-                    </button> */}
                     <ThemeSwitcher />
                 </div>
 
