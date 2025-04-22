@@ -37,10 +37,21 @@ async function processPlaylistsAndImages(accessToken: string, userId: string, sp
       if (playlist.owner.id === spotifyId) {
         console.log(`Processing user playlist: ${playlist.name}`);
         
-        // Insert playlist into Supabase
+        // First, check if playlist already exists by spotify_id
+        const { data: existingPlaylist } = await supabaseAdmin
+        .from('playlists')
+        .select('id')
+        .eq('spotify_id', playlist.id)
+        .single();
+        
+        // Playlist ID - either existing or new
+        const playlist_id = existingPlaylist?.id || uuidv4();
+        
+        // Insert or update playlist into Supabase
         const { data: playlistData, error: playlistError } = await supabaseAdmin
           .from('playlists')
           .upsert({
+            id: playlist_id,
             spotify_id: playlist.id,
             user_id: userId,
             name: playlist.name,
@@ -67,11 +78,29 @@ async function processPlaylistsAndImages(accessToken: string, userId: string, sp
           if (coverImages.length > 0) {
             const coverUrl = coverImages[0].url;
             console.log(`Found cover image for ${playlist.name}`);
+
+            // First, check if cover already exists by url
+            const { data: existingImage } = await supabaseAdmin
+            .from('images')
+            .select('id')
+            .eq('url', coverUrl)
+            .single();
+            
+            // If the image already exists, we can skip the upload
+            if (existingImage) {
+              console.log(`Image already exists for ${playlist.name}, skipping upload`);
+              continue;
+            }
+            // Otherwise, we need to upload the image
+            console.log(`Uploading image for ${playlist.name}`);
+            // Image ID - either existing or new
+            const image_id = uuidv4();
             
             // Insert image into Supabase
             const { data: imageData, error: imageError } = await supabaseAdmin
               .from('images')
               .upsert({
+                id: image_id,
                 user_id: userId,
                 playlist_id: playlistData.id,
                 url: coverUrl,
