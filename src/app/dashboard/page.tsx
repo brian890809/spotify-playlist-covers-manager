@@ -5,7 +5,8 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import SpotifyImageDialog from '@/components/SpotifyImageDialog';
-import { Sun, Moon, Home, Music2, ListMusic, Search } from 'lucide-react';
+import ThemeSwitcher from '@/components/ThemeSwitcher';
+import { Home, Music2, ListMusic, Search } from 'lucide-react';
 
 interface PlaylistImage {
     url: string;
@@ -186,13 +187,14 @@ export default function Dashboard() {
                     <h1 className="text-xl font-bold">
                         <span className="text-[#1DB954]">Spotify</span> Playlists
                     </h1>
-                    <button
+                    {/* <button
                         onClick={toggleTheme}
                         className="p-2 rounded-full bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors"
                         aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
                     >
                         {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-                    </button>
+                    </button> */}
+                    <ThemeSwitcher />
                 </div>
 
                 <nav className="mb-8">
