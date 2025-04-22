@@ -119,14 +119,6 @@ async function processPlaylistsAndImages(accessToken: string, userId: string, sp
               .from('playlists')
               .update({ current_cover: imageData.id })
               .eq('id', playlistData.id);
-              
-            // Add to playlist history
-            await supabaseAdmin
-              .from('playlist_history')
-              .insert({
-                playlist_id: playlistData.id,
-                image_id: imageData.id,
-              });
           }
         } catch (error) {
           console.error(`Error fetching covers for playlist ${playlist.id}:`, error);
