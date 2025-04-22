@@ -46,7 +46,7 @@ export default function Dashboard() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [showOnlyOwnedPlaylists, setShowOnlyOwnedPlaylists] = useState(false);
-    const [selectedImage, setSelectedImage] = useState<{ url: string, alt: string, name: string } | null>(null);
+    const [selectedImage, setSelectedImage] = useState<{ url: string, alt: string, name: string, ownerId: string } | null>(null);
 
     const searchParams = useSearchParams();
     const accessToken = searchParams.get('access_token');
@@ -128,11 +128,12 @@ export default function Dashboard() {
         : playlists;
 
     // Open dialog with the selected image
-    const openImageDialog = (imageUrl: string, playlistName: string) => {
+    const openImageDialog = (imageUrl: string, playlistName: string, ownerId: string) => {
         setSelectedImage({
             url: imageUrl,
             alt: `${playlistName} cover`,
-            name: playlistName
+            name: playlistName,
+            ownerId: ownerId
         });
     };
 
@@ -223,7 +224,7 @@ export default function Dashboard() {
                                             {playlist.images && playlist.images.length > 0 ? (
                                                 <div
                                                     className="relative w-16 h-16 cursor-pointer group"
-                                                    onClick={() => openImageDialog(playlist.images![0].url, playlist.name)}
+                                                    onClick={() => openImageDialog(playlist.images![0].url, playlist.name, playlist.owner.id)}
                                                 >
                                                     <Image
                                                         src={playlist.images[0].url}
@@ -279,6 +280,7 @@ export default function Dashboard() {
                     imageUrl={selectedImage.url}
                     altText={selectedImage.alt}
                     playlistName={selectedImage.name}
+                    canEdit={currentUser && selectedImage.ownerId === currentUser.id}
                 />
             )}
         </div>
