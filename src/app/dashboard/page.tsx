@@ -7,6 +7,7 @@ import Image from 'next/image';
 import SpotifyImageDialog from '@/components/SpotifyImageDialog';
 import ThemeSwitcher from '@/components/ThemeSwitcher';
 import { Home, Music2, ListMusic, Search } from 'lucide-react';
+import { uploadPlaylistCover } from './functions';
 
 interface PlaylistImage {
     url: string;
@@ -323,6 +324,49 @@ export default function Dashboard() {
                     altText={selectedImage.alt}
                     playlistName={selectedImage.name}
                     canEdit={currentUser && selectedImage.ownerId === currentUser.id}
+                    playlistId={playlists.find(p => p.name === selectedImage.name)?.id || ''}
+                    userId={currentUser?.id || ''}
+                    onImageUpload={async (file: File) => {
+                        if (!accessToken || !currentUser) return;
+
+                        try {
+                            const playlistId = playlists.find(p => p.name === selectedImage.name)?.id;
+                            if (!playlistId) {
+                                throw new Error('Playlist ID not found');
+                            }
+
+                            const imageUrl = await uploadPlaylistCover(
+                                accessToken,
+                                playlistId,
+                                file,
+                                currentUser.id
+                            );
+
+                            // Update the UI with the new image
+                            setSelectedImage(prev => prev ? {
+                                ...prev,
+                                url: imageUrl
+                            } : null);
+
+                            // Update the playlist in the list
+                            setPlaylists(prev => prev.map(p => {
+                                if (p.id === playlistId && p.images && p.images.length > 0) {
+                                    return {
+                                        ...p,
+                                        images: [{
+                                            url: imageUrl,
+                                            height: p.images[0].height,
+                                            width: p.images[0].width
+                                        }, ...p.images.slice(1)]
+                                    };
+                                }
+                                return p;
+                            }));
+                        } catch (error) {
+                            console.error('Error uploading playlist cover:', error);
+                            alert('Failed to upload image. Please try again.');
+                        }
+                    }}
                 />
             )}
         </div>

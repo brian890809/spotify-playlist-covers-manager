@@ -20,6 +20,9 @@ interface SpotifyImageDialogProps {
     canEdit?: boolean | null
     onImageUpload?: (file: File) => Promise<void>
     onGenerateWithAI?: (prompt: string) => Promise<void>
+    accessToken?: string
+    playlistId?: string
+    userId?: string
 }
 
 export default function SpotifyImageDialog({
