@@ -169,7 +169,7 @@ export default function Dashboard() {
 
     return (
         <div className="min-h-screen flex flex-col md:flex-row bg-white dark:bg-[#121212] text-gray-900 dark:text-white transition-colors duration-300">
-            <div className="w-full md:w-64 bg-gray-100 dark:bg-[#000000] p-4 md:p-6 shadow-md">
+            <div className="w-full md:w-64 bg-gray-100 dark:bg-[#000000] p-4 md:p-6 shadow-md md:fixed md:h-screen md:overflow-y-auto">
                 <div className="flex items-center justify-between mb-6">
                     <h1 className="text-xl font-bold">
                         <span className="text-[#1DB954]">Spotify</span> Playlists
@@ -207,7 +207,7 @@ export default function Dashboard() {
                 )}
             </div>
 
-            <div className="flex-1 p-4 md:p-8 overflow-auto">
+            <div className="flex-1 p-4 md:p-8 overflow-auto md:ml-64">
                 <div className="max-w-5xl">
                     <div className="mb-6 flex justify-between items-center">
                         <h2 className="text-2xl font-bold">Your Playlists</h2>
@@ -220,19 +220,16 @@ export default function Dashboard() {
                     </div>
 
                     {currentUser && (
-                        <div className="mb-6 p-4 rounded-lg bg-gray-100 dark:bg-[#282828] shadow-sm">
-                            <div className="flex items-center">
-                                <input
-                                    type="checkbox"
-                                    id="owned-filter"
-                                    checked={showOnlyOwnedPlaylists}
-                                    onChange={() => setShowOnlyOwnedPlaylists(!showOnlyOwnedPlaylists)}
-                                    className="mr-2 h-4 w-4 accent-[#1DB954]"
-                                />
-                                <label htmlFor="owned-filter" className="text-sm font-medium">
-                                    Show only playlists I own
-                                </label>
-                            </div>
+                        <div className="mb-6">
+                            <button
+                                onClick={() => setShowOnlyOwnedPlaylists(!showOnlyOwnedPlaylists)}
+                                className={`rounded-full py-2 px-4 text-sm font-medium transition-all duration-200 ${showOnlyOwnedPlaylists
+                                        ? 'bg-[#1DB954] text-white'
+                                        : 'bg-gray-200 dark:bg-[#282828] text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-[#333333]'
+                                    }`}
+                            >
+                                My Playlists
+                            </button>
                         </div>
                     )}
 
