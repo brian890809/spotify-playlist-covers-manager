@@ -79,18 +79,28 @@ async function processPlaylistsAndImages(accessToken: string, userId: string, sp
             const coverUrl = coverImages[0].url;
             console.log(`Found cover image for ${playlist.name}`);
 
-            // First, check if cover already exists by url
+            // First, check if cover already exists by spotify image id
+            const imageId = coverUrl.split('/').pop()?.split('?')[0]; // Extract image ID from URL
             const { data: existingImage } = await supabaseAdmin
             .from('images')
-            .select('id')
-            .eq('url', coverUrl)
+            .select('id, url')
+            .eq('spotify_image_id', imageId)
             .single();
             
-            // If the image already exists, we can skip the upload
-            if (existingImage) {
-              console.log(`Image already exists for ${playlist.name}, skipping upload`);
+            // If the image already exists, we only update the url
+            if (existingImage && existingImage.url === coverUrl) {
+              if ( existingImage.url === coverUrl ) {
+                console.log(`Image already exists for ${playlist.name}, skipping upload`);
+              } else {
+                // Update the existing image URL and changed_at
+                await supabaseAdmin
+                  .from('images')
+                  .update({ url: coverUrl })
+                  .eq('id', existingImage.id);
+              }
               continue;
             }
+
             // Otherwise, we need to upload the image
             console.log(`Uploading image for ${playlist.name}`);
             // Image ID - either existing or new
