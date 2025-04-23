@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import {
     Dialog,
@@ -31,14 +31,34 @@ export default function SpotifyImageDialog({
     imageUrl,
     altText,
     playlistName,
+    playlistId,
     canEdit = false,
     onImageUpload,
-    onGenerateWithAI
+    onGenerateWithAI,
+    userId
 }: SpotifyImageDialogProps) {
     const [aiPrompt, setAiPrompt] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
     const [recentImages, setRecentImages] = useState<string[]>([]);
     const [isUploading, setIsUploading] = useState(false);
+
+    // Load recent images from supabase 'images' table and update recentImages state
+    useEffect(() => {
+        const fetchRecentImages = async () => {
+            try {
+                const response = await fetch(`/api/get-recent-images?userId=${userId}&playlistId=${playlistId}`);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch recent images');
+                }
+                const data = await response.json();
+                setRecentImages(data.images);
+            } catch (error) {
+                console.error('Error fetching recent images:', error);
+            }
+        };
+
+        fetchRecentImages();
+    }, []); // Empty dependency array to run only once when the component mounts
 
     const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
