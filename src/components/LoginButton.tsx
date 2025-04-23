@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react';
+import { SPOTIFY_SCOPES } from '@/lib/spotify-scope';
 
 const LoginButton = () => {
     const [clientId, setClientId] = useState<string | null>(null);
@@ -23,7 +24,7 @@ const LoginButton = () => {
         }
 
         const redirectUri = 'http://127.0.0.1:3000/api/callback';
-        const scopes = ['playlist-read-private', 'playlist-read-collaborative'];
+        const scopes = SPOTIFY_SCOPES;
 
         const authUrl = `https://accounts.spotify.com/authorize?response_type=code&client_id=${clientId}&scope=${scopes.join('%20')}&redirect_uri=${encodeURIComponent(redirectUri)}`;
 

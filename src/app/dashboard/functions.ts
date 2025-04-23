@@ -19,7 +19,7 @@ export const fileToBase64 = (file: File): Promise<string> => {
 };
 
 /**
- * Uploads a playlist cover image to Spotify and updates Supabase
+ * Uploads a playlist cover image to Spotify and updates Supabase using the API
  * @param accessToken - Spotify access token
  * @param playlistId - Spotify playlist ID
  * @param file - Image file to upload
@@ -35,79 +35,25 @@ export const uploadPlaylistCover = async (
   // 1. Convert image to base64
   const base64Image = await fileToBase64(file);
   
-  // 2. Upload image to Spotify
-  const response = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/images`, {
-    method: 'PUT',
+  // 2. Call our API endpoint
+  const response = await fetch('/api/upload-cover', {
+    method: 'POST',
     headers: {
-      'Authorization': `Bearer ${accessToken}`,
-      'Content-Type': 'image/jpeg',
+      'Content-Type': 'application/json',
     },
-    body: base64Image,
+    body: JSON.stringify({
+      accessToken,
+      playlistId,
+      base64Image,
+      userId
+    }),
   });
   
   if (!response.ok) {
     const errorData = await response.json().catch(() => null);
-    throw new Error(`Failed to upload image to Spotify: ${response.status} ${response.statusText}. ${JSON.stringify(errorData)}`);
+    throw new Error(`Failed to upload image: ${response.status} ${response.statusText}. ${JSON.stringify(errorData)}`);
   }
   
-  // 3. Fetch the new image URL from Spotify
-  const imagesResponse = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/images`, {
-    headers: {
-      'Authorization': `Bearer ${accessToken}`,
-    },
-  });
-  
-  if (!imagesResponse.ok) {
-    throw new Error(`Failed to get playlist images: ${imagesResponse.status} ${imagesResponse.statusText}`);
-  }
-  
-  const images = await imagesResponse.json();
-  const imageUrl = images[0]?.url;
-  
-  if (!imageUrl) {
-    throw new Error('No image URL found after upload');
-  }
-  
-  // 4. Get playlist from Supabase
-  const supabase = createBrowserClient();
-  const { data: playlistData, error: playlistError } = await supabase
-    .from('playlists')
-    .select('id')
-    .eq('spotify_id', playlistId)
-    .single();
-    
-  if (playlistError || !playlistData) {
-    throw new Error(`Failed to get playlist from Supabase: ${playlistError?.message || 'Playlist not found'}`);
-  }
-  
-  // 5. Insert the new image into Supabase
-  const imageId = uuidv4();
-  const { data: imageData, error: imageError } = await supabase
-    .from('images')
-    .insert({
-      id: imageId,
-      user_id: userId,
-      playlist_id: playlistData.id,
-      url: imageUrl,
-      type: 'upload',
-      changed_at: new Date().toISOString() // Use the new column we added
-    })
-    .select()
-    .single();
-    
-  if (imageError || !imageData) {
-    throw new Error(`Failed to insert image into Supabase: ${imageError?.message || 'Unknown error'}`);
-  }
-  
-  // 6. Update the playlist's current_cover
-  const { error: updateError } = await supabase
-    .from('playlists')
-    .update({ current_cover: imageId })
-    .eq('id', playlistData.id);
-    
-  if (updateError) {
-    throw new Error(`Failed to update playlist current_cover: ${updateError.message}`);
-  }
-  
-  return imageUrl;
+  const data = await response.json();
+  return data.imageUrl;
 };
