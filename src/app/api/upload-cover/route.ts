@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
+import { getSpotifyImageId } from '@/lib/utils';
 
 export async function POST(request: NextRequest) {
   try {
@@ -65,6 +66,7 @@ export async function POST(request: NextRequest) {
 
     const images = await imagesResponse.json();
     const imageUrl = images[0]?.url;
+    const spotify_image_id = getSpotifyImageId(imageUrl);
 
     if (!imageUrl) {
       return NextResponse.json(
@@ -109,6 +111,7 @@ export async function POST(request: NextRequest) {
         user_id: userData.id,
         playlist_id: playlistData.id,
         url: imageUrl,
+        spotify_image_id: spotify_image_id,
         type: 'upload',
         changed_at: new Date().toISOString()
       })

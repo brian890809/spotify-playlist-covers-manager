@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
 import { supabaseAdmin } from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
+import { getSpotifyImageId } from '@/lib/utils';
 
 // Helper function to fetch Spotify user profile
 async function fetchSpotifyUserProfile(accessToken: string) {
@@ -77,10 +78,9 @@ async function processPlaylistsAndImages(accessToken: string, userId: string, sp
           // If there are cover images, store the first one
           if (coverImages.length > 0) {
             const coverUrl = coverImages[0].url;
-            console.log(`Found cover image for ${playlist.name}`);
 
             // First, check if cover already exists by spotify image id
-            const imageId = coverUrl.split('/').pop()?.split('?')[0]; // Extract image ID from URL
+            const imageId = getSpotifyImageId(coverUrl);
             const { data: existingImage } = await supabaseAdmin
             .from('images')
             .select('id, url')
@@ -88,11 +88,12 @@ async function processPlaylistsAndImages(accessToken: string, userId: string, sp
             .single();
             
             // If the image already exists, we only update the url
-            if (existingImage && existingImage.url === coverUrl) {
+            if (existingImage) {
               if ( existingImage.url === coverUrl ) {
                 console.log(`Image already exists for ${playlist.name}, skipping upload`);
               } else {
                 // Update the existing image URL and changed_at
+                console.log(`Playlist ${playlist.name} comes from a different CDN, updating URL`);
                 await supabaseAdmin
                   .from('images')
                   .update({ url: coverUrl })
@@ -115,6 +116,7 @@ async function processPlaylistsAndImages(accessToken: string, userId: string, sp
                 playlist_id: playlistData.id,
                 url: coverUrl,
                 type: 'upload', // Assuming existing Spotify covers are 'upload' type
+                spotify_image_id: imageId,
               })
               .select()
               .single();
