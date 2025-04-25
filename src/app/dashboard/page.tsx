@@ -66,7 +66,7 @@ export default function Dashboard() {
         const processPlaylists = async () => {
             try {
                 setSyncStatus('syncing');
-                const response = await fetch('/api/process-playlists');
+                const response = await fetch('/api/process-user-playlists');
 
                 if (!response.ok) {
                     const errorData = await response.json();
@@ -75,6 +75,9 @@ export default function Dashboard() {
                     return;
                 }
 
+                const data = await response.json();
+                const userData = JSON.parse(data.userData);
+                setCurrentUser(userData);
                 setSyncStatus('completed');
             } catch (error) {
                 console.error('Error syncing playlists:', error);
@@ -82,57 +85,17 @@ export default function Dashboard() {
             }
         };
 
-        const fetchUserAndPlaylists = async () => {
+        const fetchPlaylists = async () => {
             try {
-                const userResponse = await fetch('https://api.spotify.com/v1/me', {
-                    headers: {
-                        Authorization: `Bearer ${accessToken}`,
-                    },
-                });
-
-                if (!userResponse.ok) {
-                    throw new Error('Failed to fetch user information');
-                }
-
-                const userData = await userResponse.json();
-                setCurrentUser(userData);
-
-                const playlistsResponse = await fetch('/api/playlists', {
-                    headers: {
-                        Authorization: `Bearer ${accessToken}`,
-                    },
-                });
+                const playlistsResponse = await fetch('/api/playlists');
 
                 if (!playlistsResponse.ok) {
                     throw new Error('Failed to fetch playlists');
                 }
 
                 const data = await playlistsResponse.json();
-                const playlistsWithoutCovers = data.items || [];
 
-                const playlistsWithCovers = await Promise.all(
-                    playlistsWithoutCovers.map(async (playlist: Playlist) => {
-                        try {
-                            const coverResponse = await fetch(`https://api.spotify.com/v1/playlists/${playlist.id}/images`, {
-                                headers: {
-                                    Authorization: `Bearer ${accessToken}`,
-                                },
-                            });
-
-                            if (coverResponse.ok) {
-                                const coverImages = await coverResponse.json();
-                                return { ...playlist, images: coverImages };
-                            }
-
-                            return playlist;
-                        } catch (err) {
-                            console.error(`Error fetching cover for playlist ${playlist.id}:`, err);
-                            return playlist;
-                        }
-                    })
-                );
-
-                setPlaylists(playlistsWithCovers);
+                setPlaylists(data.items || []);
                 setLoading(false);
 
                 processPlaylists();
@@ -143,7 +106,7 @@ export default function Dashboard() {
             }
         };
 
-        fetchUserAndPlaylists();
+        fetchPlaylists();
     }, [accessToken, stackUser]);
 
     const filteredPlaylists = showOnlyOwnedPlaylists && currentUser
@@ -189,6 +152,8 @@ export default function Dashboard() {
             </div>
         );
     }
+
+    console.log(currentUser)
 
     return (
         <div className="min-h-screen flex flex-col md:flex-row bg-white dark:bg-[#121212] text-gray-900 dark:text-white transition-colors duration-300">

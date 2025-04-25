@@ -8,7 +8,7 @@ export const stackServerApp = new StackServerApp({
   urls: {
     afterSignIn: "/dashboard",
     afterSignUp: "/dashboard",
-    afterSignOut: "/"
+    afterSignOut: "/dashboard",
   },
   oauthScopesOnSignIn: {
     spotify: SPOTIFY_SCOPES

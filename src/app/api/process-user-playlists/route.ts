@@ -21,7 +21,7 @@ async function fetchSpotifyUserProfile(accessToken: string) {
 }
 
 // Helper function that processes playlists and images in the background
-async function processPlaylistsAndImages(accessToken: string, userId: string, spotifyId: string) {
+async function getPlaylistsAndImages(accessToken: string, userId: string, spotifyId: string) {
   try {
     // Fetch user playlists
     const response = await axios.get('https://api.spotify.com/v1/me/playlists', {
@@ -32,11 +32,9 @@ async function processPlaylistsAndImages(accessToken: string, userId: string, sp
 
     const playlists = response.data.items;
     console.log(`Processing ${playlists.length} playlists for user ${userId}`);
-    
+    const ownedPlaylists = playlists.filter((playlist: { owner: { id: string } }) => playlist.owner.id === spotifyId);
     // Process each playlist
-    for (const playlist of playlists) {
-      // Check if this is the user's own playlist (owner.id matches spotify_id)
-      if (playlist.owner.id === spotifyId) {
+    for (const playlist of ownedPlaylists) {
         console.log(`Processing user playlist: ${playlist.name}`);
         
         // First, check if playlist already exists by spotify_id
@@ -51,33 +49,33 @@ async function processPlaylistsAndImages(accessToken: string, userId: string, sp
         
         // Insert or update playlist into Supabase
         const { data: playlistData, error: playlistError } = await supabaseAdmin
-          .from('playlists')
-          .upsert({
+            .from('playlists')
+            .upsert({
             id: playlist_id,
             spotify_id: playlist.id,
             user_id: userId,
             name: playlist.name,
-          })
-          .select()
-          .single();
-          
+            })
+            .select()
+            .single();
+            
         if (playlistError) {
-          console.error('Error upserting playlist:', playlistError);
-          continue;
+            console.error('Error upserting playlist:', playlistError);
+            continue;
         }
         
         // Fetch playlist cover images
         try {
-          const coverResponse = await axios.get(`https://api.spotify.com/v1/playlists/${playlist.id}/images`, {
+            const coverResponse = await axios.get(`https://api.spotify.com/v1/playlists/${playlist.id}/images`, {
             headers: {
-              Authorization: `Bearer ${accessToken}`,
+                Authorization: `Bearer ${accessToken}`,
             },
-          });
-          
-          const coverImages = coverResponse.data;
-          
-          // If there are cover images, store the first one
-          if (coverImages.length > 0) {
+            });
+            
+            const coverImages = coverResponse.data;
+            
+            // If there are cover images, store the first one
+            if (coverImages.length > 0) {
             const coverUrl = coverImages[0].url;
 
             // First, check if cover already exists by spotify image id
@@ -90,17 +88,17 @@ async function processPlaylistsAndImages(accessToken: string, userId: string, sp
             
             // If the image already exists, we only update the url
             if (existingImage) {
-              if (existingImage.url === coverUrl) {
+                if (existingImage.url === coverUrl) {
                 console.log(`Image already exists for ${playlist.name}, skipping upload`);
-              } else {
+                } else {
                 // Update the existing image URL and changed_at
                 console.log(`Playlist ${playlist.name} comes from a different CDN, updating URL`);
                 await supabaseAdmin
-                  .from('images')
-                  .update({ url: coverUrl })
-                  .eq('id', existingImage.id);
-              }
-              continue;
+                    .from('images')
+                    .update({ url: coverUrl })
+                    .eq('id', existingImage.id);
+                }
+                continue;
             }
 
             // Otherwise, we need to upload the image
@@ -110,33 +108,32 @@ async function processPlaylistsAndImages(accessToken: string, userId: string, sp
             
             // Insert image into Supabase
             const { data: imageData, error: imageError } = await supabaseAdmin
-              .from('images')
-              .upsert({
+                .from('images')
+                .upsert({
                 id: image_id,
                 user_id: userId,
                 playlist_id: playlistData.id,
                 url: coverUrl,
                 type: 'upload', // Assuming existing Spotify covers are 'upload' type
                 spotify_image_id: imageId,
-              })
-              .select()
-              .single();
-              
+                })
+                .select()
+                .single();
+                
             if (imageError) {
-              console.error('Error upserting image:', imageError);
-              continue;
+                console.error('Error upserting image:', imageError);
+                continue;
             }
             
             // Update playlist with current_cover reference
             await supabaseAdmin
-              .from('playlists')
-              .update({ current_cover: imageData.id })
-              .eq('id', playlistData.id);
-          }
+                .from('playlists')
+                .update({ current_cover: imageData.id })
+                .eq('id', playlistData.id);
+            }
         } catch (error) {
-          console.error(`Error fetching covers for playlist ${playlist.id}:`, error);
+            console.error(`Error fetching covers for playlist ${playlist.id}:`, error);
         }
-      }
     }
     console.log(`Finished processing playlists and images for user ${userId}`);
     return { success: true, message: 'Playlists processed successfully' };
@@ -146,6 +143,8 @@ async function processPlaylistsAndImages(accessToken: string, userId: string, sp
   }
 }
 
+async function processPlaylistsAndImagesSupabase(accessToken: string, userId: string, spotifyId: string) {
+}
 export async function GET(request: NextRequest) {
   try {
     // Get authenticated user from Stack Auth
@@ -176,7 +175,8 @@ export async function GET(request: NextRequest) {
       .single();
     
     // User ID - either existing or new
-    const userId = existingUser?.id || uuidv4();
+    // If the user doesn't exist, we generate a new UUID
+    const userId = !existingUser ? uuidv4() : existingUser.id;
     
     console.log("Using user ID:", userId, "existing user:", !!existingUser);
     
@@ -199,11 +199,15 @@ export async function GET(request: NextRequest) {
     
     // Process playlists in the background
     // We don't await this so we can return a response immediately
-    processPlaylistsAndImages(accessToken, userData.id, spotifyProfile.id)
+    getPlaylistsAndImages(accessToken, userData.id, spotifyProfile.id)
       .catch(error => console.error('Background processing error:', error));
     
     // Return immediate success response
-    return NextResponse.json({ status: 'processing', message: 'Playlist sync started' });
+    return NextResponse.json({ status: 'user-returned', userData: JSON.stringify({
+      id: userData.spotify_id,
+      display_name: userData.display_name,
+    }) }, { status: 200 });
+    // return NextResponse.json({ status: 'processing', message: 'Playlist sync started' });
   } catch (error) {
     console.error('Error processing request:', error);
     return NextResponse.json({ error: 'Processing failed' }, { status: 500 });

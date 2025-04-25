@@ -26,13 +26,44 @@ export async function GET(request: NextRequest) {
     // Use the token from the header if available, otherwise use the one from Stack Auth
     const token = headerToken || accessToken;
 
+    // Fetch user's playlists
     const playlistResponse = await axios.get('https://api.spotify.com/v1/me/playlists', {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
 
-    return NextResponse.json(playlistResponse.data);
+    const playlists = playlistResponse.data.items || [];
+    
+    // Fetch cover images for each playlist
+    const playlistsWithCovers = await Promise.all(
+      playlists.map(async (playlist : { id: string; name: string; }) => {
+        try {
+          const coverResponse = await axios.get(
+            `https://api.spotify.com/v1/playlists/${playlist.id}/images`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+          if (coverResponse.status === 200) {
+            return { ...playlist, images: coverResponse.data };
+          }
+
+          return playlist;
+        } catch (err) {
+          console.error(`Error fetching cover for playlist ${playlist.id}:`, err);
+          return playlist;
+        }
+      })
+    );
+
+    return NextResponse.json({ 
+      ...playlistResponse.data,
+      items: playlistsWithCovers 
+    });
   } catch (error) {
     console.error('Error fetching playlists:', error);
     return NextResponse.json({ error: 'Failed to fetch playlists' }, { status: 500 });
