@@ -20,7 +20,7 @@ export default function Home() {
         <div className="flex items-center gap-3">
           <ThemeSwitcher />
           <Link
-            href="/dashboard"
+            href="/user/dashboard"
             className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-[#1DB954] hover:bg-[#1ed760] text-white font-medium text-sm sm:text-base h-10 px-4 sm:px-5"
           >
             {isLoggedIn ? 'Go to Dashboard' : 'Get Started'}
@@ -76,7 +76,7 @@ export default function Home() {
           </div>
 
           <Link
-            href="/dashboard"
+            href="/user/dashboard"
             className="inline-block rounded-full bg-[#1DB954] hover:bg-[#1ed760] text-white font-medium py-3 px-8 transition-colors text-lg"
           >
             {isLoggedIn ? 'Go to Your Dashboard' : 'Get Started Now'}

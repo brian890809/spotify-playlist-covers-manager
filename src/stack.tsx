@@ -6,9 +6,9 @@ import { SPOTIFY_SCOPES } from '@/lib/spotify-scope';
 export const stackServerApp = new StackServerApp({
   tokenStore: "nextjs-cookie",
   urls: {
-    afterSignIn: "/dashboard",
-    afterSignUp: "/dashboard",
-    afterSignOut: "/dashboard",
+    afterSignIn: "/user/dashboard",
+    afterSignUp: "/user/dashboard",
+    afterSignOut: "/",
   },
   oauthScopesOnSignIn: {
     spotify: SPOTIFY_SCOPES
