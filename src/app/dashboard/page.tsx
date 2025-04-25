@@ -1,13 +1,13 @@
 'use client'
 
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import SpotifyImageDialog from '@/components/SpotifyImageDialog';
 import ThemeSwitcher from '@/components/ThemeSwitcher';
-import { Home, Music2, ListMusic, Search } from 'lucide-react';
+import { Home, Music2, ListMusic } from 'lucide-react';
 import { uploadPlaylistCover } from './functions';
+import { useUser } from '@stackframe/stack';
 
 interface PlaylistImage {
     url: string;
@@ -47,19 +47,40 @@ export default function Dashboard() {
     const [playlists, setPlaylists] = useState<Playlist[]>([]);
     const [currentUser, setCurrentUser] = useState<SpotifyUser | null>(null);
     const [loading, setLoading] = useState(true);
+    const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'completed' | 'error'>('idle');
     const [error, setError] = useState<string | null>(null);
     const [showOnlyOwnedPlaylists, setShowOnlyOwnedPlaylists] = useState(false);
     const [selectedImage, setSelectedImage] = useState<{ url: string, alt: string, name: string, ownerId: string } | null>(null);
 
-    const searchParams = useSearchParams();
-    const accessToken = searchParams.get('access_token');
+    const stackUser = useUser({ or: 'redirect' });
+    const account = stackUser.useConnectedAccount('spotify', { or: 'redirect' });
+    const { accessToken } = account.useAccessToken();
 
     useEffect(() => {
-        if (!accessToken) {
-            setError('No access token found. Please login again.');
+        if (!stackUser || !accessToken) {
+            setError('Authentication error. Please login again.');
             setLoading(false);
             return;
         }
+
+        const processPlaylists = async () => {
+            try {
+                setSyncStatus('syncing');
+                const response = await fetch('/api/process-playlists');
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error('Error processing playlists:', errorData);
+                    setSyncStatus('error');
+                    return;
+                }
+
+                setSyncStatus('completed');
+            } catch (error) {
+                console.error('Error syncing playlists:', error);
+                setSyncStatus('error');
+            }
+        };
 
         const fetchUserAndPlaylists = async () => {
             try {
@@ -113,6 +134,8 @@ export default function Dashboard() {
 
                 setPlaylists(playlistsWithCovers);
                 setLoading(false);
+
+                processPlaylists();
             } catch (err) {
                 setError('Error fetching data. Please try again later.');
                 setLoading(false);
@@ -121,7 +144,7 @@ export default function Dashboard() {
         };
 
         fetchUserAndPlaylists();
-    }, [accessToken]);
+    }, [accessToken, stackUser]);
 
     const filteredPlaylists = showOnlyOwnedPlaylists && currentUser
         ? playlists.filter(playlist => playlist.owner.id === currentUser.id)
@@ -203,6 +226,38 @@ export default function Dashboard() {
                             </div>
                             <span className="font-semibold">{currentUser.display_name}</span>
                         </div>
+
+                        {syncStatus === 'syncing' && (
+                            <div className="mt-3 flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                                <div className="animate-spin w-3 h-3 border border-[#1DB954] border-t-transparent rounded-full"></div>
+                                <span>Syncing playlists...</span>
+                            </div>
+                        )}
+
+                        {syncStatus === 'completed' && (
+                            <div className="mt-3 text-sm text-green-600 dark:text-green-400">
+                                Playlists synced
+                            </div>
+                        )}
+
+                        {syncStatus === 'error' && (
+                            <div className="mt-3 text-sm text-red-600 dark:text-red-400">
+                                Sync error
+                            </div>
+                        )}
+
+                        <div className="mt-3">
+                            <button
+                                onClick={() => {
+                                    if (stackUser) {
+                                        stackUser.signOut();
+                                    }
+                                }}
+                                className="text-sm text-gray-700 dark:text-gray-300 hover:text-[#1DB954] dark:hover:text-[#1DB954] transition-colors"
+                            >
+                                Sign Out
+                            </button>
+                        </div>
                     </div>
                 )}
             </div>
@@ -224,8 +279,8 @@ export default function Dashboard() {
                             <button
                                 onClick={() => setShowOnlyOwnedPlaylists(!showOnlyOwnedPlaylists)}
                                 className={`rounded-full py-2 px-4 text-sm font-medium transition-all duration-200 ${showOnlyOwnedPlaylists
-                                        ? 'bg-[#1DB954] text-white'
-                                        : 'bg-gray-200 dark:bg-[#282828] text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-[#333333]'
+                                    ? 'bg-[#1DB954] text-white'
+                                    : 'bg-gray-200 dark:bg-[#282828] text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-[#333333]'
                                     }`}
                             >
                                 My Playlists
@@ -339,13 +394,11 @@ export default function Dashboard() {
                                 currentUser.id
                             );
 
-                            // Update the UI with the new image
                             setSelectedImage(prev => prev ? {
                                 ...prev,
                                 url: imageUrl
                             } : null);
 
-                            // Update the playlist in the list
                             setPlaylists(prev => prev.map(p => {
                                 if (p.id === playlistId && p.images && p.images.length > 0) {
                                     return {
