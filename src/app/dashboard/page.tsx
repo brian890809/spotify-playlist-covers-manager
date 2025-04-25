@@ -96,9 +96,8 @@ export default function Dashboard() {
                 const data = await playlistsResponse.json();
 
                 setPlaylists(data.items || []);
+                await processPlaylists();
                 setLoading(false);
-
-                processPlaylists();
             } catch (err) {
                 setError('Error fetching data. Please try again later.');
                 setLoading(false);
