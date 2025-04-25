@@ -208,7 +208,7 @@ export default function Dashboard() {
             </div>
 
             <div className="flex-1 p-4 md:p-8 overflow-auto md:ml-64">
-                <div className="max-w-5xl">
+                <div className="max-w-7xl">
                     <div className="mb-6 flex justify-between items-center">
                         <h2 className="text-2xl font-bold">Your Playlists</h2>
                         <Link
@@ -224,8 +224,8 @@ export default function Dashboard() {
                             <button
                                 onClick={() => setShowOnlyOwnedPlaylists(!showOnlyOwnedPlaylists)}
                                 className={`rounded-full py-2 px-4 text-sm font-medium transition-all duration-200 ${showOnlyOwnedPlaylists
-                                        ? 'bg-[#1DB954] text-white'
-                                        : 'bg-gray-200 dark:bg-[#282828] text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-[#333333]'
+                                    ? 'bg-[#1DB954] text-white'
+                                    : 'bg-gray-200 dark:bg-[#282828] text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-[#333333]'
                                     }`}
                             >
                                 My Playlists
