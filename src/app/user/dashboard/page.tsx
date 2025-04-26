@@ -5,14 +5,11 @@ import Image from 'next/image';
 import SpotifyImageDialog from '@/components/SpotifyImageDialog';
 import { Music2 } from 'lucide-react';
 import { onImageUpload } from './functions';
-import { useSearchParams } from 'next/navigation';
-import { SpotifyDataContext } from '../layout';
+import SpotifyDataContext from '@/utils/SpotifyContext';
 
 export default function DashboardPage() {
     const [showOnlyOwnedPlaylists, setShowOnlyOwnedPlaylists] = useState(false);
     const [selectedImage, setSelectedImage] = useState<{ url: string, alt: string, name: string, ownerId: string } | null>(null);
-    const searchParams = useSearchParams();
-    const accessToken = searchParams.get('access_token');
 
     // Access data from the parent layout using context
     const { currentUser, playlists, loading, error, setPlaylists } = useContext(SpotifyDataContext);
@@ -168,7 +165,6 @@ export default function DashboardPage() {
                     onImageUpload={async (file: File) => {
                         await onImageUpload(
                             file,
-                            accessToken || '',
                             currentUser,
                             playlists,
                             selectedImage,

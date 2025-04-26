@@ -2,10 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
 import { getSpotifyImageId } from '@/lib/utils';
+import { stackServerApp } from '@/stack';
 
 export async function POST(request: NextRequest) {
   try {
-    const { accessToken, playlistId, base64Image, userId } = await request.json();
+
+    const user = await stackServerApp.getUser({ or: 'redirect' });
+    const account = await user.getConnectedAccount('spotify', { or: 'redirect' });
+    const { accessToken } = await account.getAccessToken();
+
+    const { playlistId, base64Image, userId } = await request.json();
 
     if (!accessToken || !playlistId || !base64Image || !userId) {
       return NextResponse.json(

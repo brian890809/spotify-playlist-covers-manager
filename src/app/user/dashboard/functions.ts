@@ -19,14 +19,12 @@ export const fileToBase64 = (file: File): Promise<string> => {
 
 /**
  * Uploads a playlist cover image to Spotify and updates Supabase using the API
- * @param accessToken - Spotify access token
  * @param playlistId - Spotify playlist ID
  * @param file - Image file to upload
  * @param userId - Supabase user ID
  * @returns The URL of the uploaded image
  */
 export const uploadPlaylistCover = async (
-  accessToken: string,
   playlistId: string,
   file: File,
   userId: string
@@ -41,7 +39,6 @@ export const uploadPlaylistCover = async (
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      accessToken,
       playlistId,
       base64Image,
       userId
@@ -65,10 +62,10 @@ interface SelectedImage {
 }
 
 
-export const onImageUpload = async (file: File, accessToken: string, currentUser: SpotifyUser | null, playlists: Playlist[], selectedImage: SelectedImage
+export const onImageUpload = async (file: File, currentUser: SpotifyUser | null, playlists: Playlist[], selectedImage: SelectedImage
 , setSelectedImage: React.Dispatch<React.SetStateAction<SelectedImage | null>>, setPlaylists: React.Dispatch<React.SetStateAction<Playlist[]>>
 ) => {
-  if (!accessToken || !currentUser) return;
+  if (!currentUser) return;
 
   try {
       const playlistId = playlists.find(p => p.name === selectedImage.name)?.id;
@@ -77,7 +74,6 @@ export const onImageUpload = async (file: File, accessToken: string, currentUser
       }
 
       const imageUrl = await uploadPlaylistCover(
-          accessToken,
           playlistId,
           file,
           currentUser.id

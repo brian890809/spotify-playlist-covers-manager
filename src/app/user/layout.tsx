@@ -1,8 +1,9 @@
 'use client'
 
 import Sidebar from '@/components/Sidebar';
-import { createContext, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useUser } from '@stackframe/stack';
+import SpotifyDataContext from '@/utils/SpotifyContext';
 
 interface PlaylistImage {
     url: string;
@@ -37,23 +38,6 @@ export interface SpotifyUser {
     id: string;
     display_name: string;
 }
-
-// Create context for our Spotify data
-export const SpotifyDataContext = createContext<{
-    currentUser: SpotifyUser | null;
-    playlists: Playlist[];
-    loading: boolean;
-    error: string | null;
-    syncStatus: 'idle' | 'syncing' | 'completed' | 'error';
-    setPlaylists: React.Dispatch<React.SetStateAction<Playlist[]>>;
-}>({
-    currentUser: null,
-    playlists: [],
-    loading: true,
-    error: null,
-    syncStatus: 'idle',
-    setPlaylists: () => { },
-});
 
 export default function UserLayout({ children }: { children: React.ReactNode }) {
     const [playlists, setPlaylists] = useState<Playlist[]>([]);
