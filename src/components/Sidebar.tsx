@@ -8,7 +8,15 @@ interface SpotifyUser {
     display_name: string;
 }
 
-export default function Sidebar({ currentUser }: { currentUser: SpotifyUser | null }) {
+export default function Sidebar({
+    currentUser,
+    syncStatus = 'idle',
+    onSignOut
+}: {
+    currentUser: SpotifyUser | null;
+    syncStatus?: 'idle' | 'syncing' | 'completed' | 'error';
+    onSignOut?: () => void;
+}) {
     return (
         <div className="w-full md:w-64 bg-gray-100 dark:bg-[#000000] p-4 md:p-6 shadow-md md:fixed md:h-screen md:overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
@@ -44,6 +52,36 @@ export default function Sidebar({ currentUser }: { currentUser: SpotifyUser | nu
                         </div>
                         <span className="font-semibold">{currentUser.display_name}</span>
                     </div>
+
+                    {syncStatus === 'syncing' && (
+                        <div className="mt-3 flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+                            <div className="animate-spin w-3 h-3 border border-[#1DB954] border-t-transparent rounded-full"></div>
+                            <span>Syncing playlists...</span>
+                        </div>
+                    )}
+
+                    {syncStatus === 'completed' && (
+                        <div className="mt-3 text-sm text-green-600 dark:text-green-400">
+                            Playlists synced
+                        </div>
+                    )}
+
+                    {syncStatus === 'error' && (
+                        <div className="mt-3 text-sm text-red-600 dark:text-red-400">
+                            Sync error
+                        </div>
+                    )}
+
+                    {onSignOut && (
+                        <div className="mt-3">
+                            <button
+                                onClick={onSignOut}
+                                className="text-sm text-gray-700 dark:text-gray-300 hover:text-[#1DB954] dark:hover:text-[#1DB954] transition-colors"
+                            >
+                                Sign Out
+                            </button>
+                        </div>
+                    )}
                 </div>
             )}
         </div>

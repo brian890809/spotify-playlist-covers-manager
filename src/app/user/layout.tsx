@@ -2,7 +2,7 @@
 
 import Sidebar from '@/components/Sidebar';
 import { createContext, useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useUser } from '@stackframe/stack';
 
 interface PlaylistImage {
     url: string;
@@ -44,12 +44,14 @@ export const SpotifyDataContext = createContext<{
     playlists: Playlist[];
     loading: boolean;
     error: string | null;
+    syncStatus: 'idle' | 'syncing' | 'completed' | 'error';
     setPlaylists: React.Dispatch<React.SetStateAction<Playlist[]>>;
 }>({
     currentUser: null,
     playlists: [],
     loading: true,
     error: null,
+    syncStatus: 'idle',
     setPlaylists: () => { },
 });
 
@@ -58,83 +60,95 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
     const [currentUser, setCurrentUser] = useState<SpotifyUser | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'completed' | 'error'>('idle');
 
-    const searchParams = useSearchParams();
-    const accessToken = searchParams.get('access_token');
+    const stackUser = useUser({ or: 'redirect' });
+    const account = stackUser.useConnectedAccount('spotify', { or: 'redirect' });
+
+    const handleSignOut = () => {
+        // For simplicity, just redirect to the homepage
+        window.location.href = '/';
+    };
 
     useEffect(() => {
-        if (!accessToken) {
-            setError('No access token found. Please login again.');
-            setLoading(false);
-            return;
-        }
+        // This effect only runs once to start the initial data fetching
+        const initialFetch = async () => {
+            setLoading(true);
 
-        const fetchUserAndPlaylists = async () => {
             try {
-                const userResponse = await fetch('https://api.spotify.com/v1/me', {
-                    headers: {
-                        Authorization: `Bearer ${accessToken}`,
-                    },
-                });
-
-                if (!userResponse.ok) {
-                    throw new Error('Failed to fetch user information');
+                // First fetch the user data
+                const userData = await fetch('/api/get-user');
+                if (!userData.ok) {
+                    throw new Error('Failed to fetch user data');
                 }
 
-                const userData = await userResponse.json();
-                setCurrentUser(userData);
+                const user = await userData.json();
+                setCurrentUser(user);
 
-                const playlistsResponse = await fetch('/api/playlists', {
+                // After we have the user, sync the user data with backend
+                const syncUserResponse = await fetch('/api/sync-user', {
+                    method: 'POST',
                     headers: {
-                        Authorization: `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json',
                     },
+                    body: JSON.stringify({ currentUser: user }), // Use the user data we just received
                 });
 
+                if (!syncUserResponse.ok) {
+                    console.warn('User sync may not have completed successfully');
+                }
+
+                // Then fetch playlists
+                const playlistsResponse = await fetch('/api/playlists');
                 if (!playlistsResponse.ok) {
                     throw new Error('Failed to fetch playlists');
                 }
 
                 const data = await playlistsResponse.json();
-                const playlistsWithoutCovers = data.items || [];
-
-                const playlistsWithCovers = await Promise.all(
-                    playlistsWithoutCovers.map(async (playlist: Playlist) => {
-                        try {
-                            const coverResponse = await fetch(`https://api.spotify.com/v1/playlists/${playlist.id}/images`, {
-                                headers: {
-                                    Authorization: `Bearer ${accessToken}`,
-                                },
-                            });
-
-                            if (coverResponse.ok) {
-                                const coverImages = await coverResponse.json();
-                                return { ...playlist, images: coverImages };
-                            }
-
-                            return playlist;
-                        } catch (err) {
-                            console.error(`Error fetching cover for playlist ${playlist.id}:`, err);
-                            return playlist;
-                        }
-                    })
-                );
-
-                setPlaylists(playlistsWithCovers);
+                const receivedPlaylists = data.playlists || [];
+                setPlaylists(receivedPlaylists);
                 setLoading(false);
+                console.log(`Total playlists received: ${data.total}`);
+
+                // Start syncing playlists
+                setSyncStatus('syncing');
+
+                // Sync playlists with backend
+                const syncPlaylistResponse = await fetch('/api/sync-playlist', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        playlists: receivedPlaylists,
+                        currentUser: user // Use the user data we just received instead of the state
+                    }),
+                });
+
+                if (syncPlaylistResponse.ok) {
+                    setSyncStatus('completed');
+                } else {
+                    setSyncStatus('error');
+                }
             } catch (err) {
+                console.error('Error in data fetching flow:', err);
                 setError('Error fetching data. Please try again later.');
                 setLoading(false);
-                console.error(err);
+                setSyncStatus('error');
             }
         };
 
-        fetchUserAndPlaylists();
-    }, [accessToken]);
+        initialFetch();
+    }, []); // Only run once on component mount
 
     return (
-        <SpotifyDataContext.Provider value={{ currentUser, playlists, loading, error, setPlaylists }}>
+        <SpotifyDataContext.Provider value={{ currentUser, playlists, loading, error, syncStatus, setPlaylists }}>
             <div className="min-h-screen flex flex-col md:flex-row bg-white dark:bg-[#121212] text-gray-900 dark:text-white transition-colors duration-300">
-                <Sidebar currentUser={currentUser} />
+                <Sidebar
+                    currentUser={currentUser}
+                    syncStatus={syncStatus}
+                    onSignOut={handleSignOut}
+                />
                 <main className="flex-1 md:ml-64">
                     {children}
                 </main>

@@ -143,8 +143,6 @@ async function getPlaylistsAndImages(accessToken: string, userId: string, spotif
   }
 }
 
-async function processPlaylistsAndImagesSupabase(accessToken: string, userId: string, spotifyId: string) {
-}
 export async function GET(request: NextRequest) {
   try {
     // Get authenticated user from Stack Auth

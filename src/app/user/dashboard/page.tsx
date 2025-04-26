@@ -1,11 +1,10 @@
 'use client'
 
 import { useState, useContext } from 'react';
-import Link from 'next/link';
 import Image from 'next/image';
 import SpotifyImageDialog from '@/components/SpotifyImageDialog';
 import { Music2 } from 'lucide-react';
-import { uploadPlaylistCover } from './functions';
+import { onImageUpload } from './functions';
 import { useSearchParams } from 'next/navigation';
 import { SpotifyDataContext } from '../layout';
 
@@ -52,12 +51,6 @@ export default function DashboardPage() {
         return (
             <div className="flex-1 p-4 md:p-8 flex flex-col items-center justify-center">
                 <p className="text-lg text-red-500 mb-4">{error}</p>
-                <Link
-                    href="/"
-                    className="rounded-full bg-[#1DB954] hover:bg-[#1ed760] text-white font-medium py-2 px-6 transition-colors"
-                >
-                    Return to Home
-                </Link>
             </div>
         );
     }
@@ -65,14 +58,8 @@ export default function DashboardPage() {
     return (
         <div className="flex-1 p-4 md:p-8 overflow-auto">
             <div className="max-w-7xl">
-                <div className="mb-6 flex justify-between items-center">
+                <div className="mb-6">
                     <h2 className="text-2xl font-bold">Your Playlists</h2>
-                    <Link
-                        href="/"
-                        className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-[#1DB954] hover:bg-[#1ed760] text-white font-medium text-sm h-10 px-5"
-                    >
-                        Return to Home
-                    </Link>
                 </div>
 
                 {currentUser && (
@@ -179,45 +166,15 @@ export default function DashboardPage() {
                     playlistId={playlists.find(p => p.name === selectedImage.name)?.id || ''}
                     userId={currentUser?.id || ''}
                     onImageUpload={async (file: File) => {
-                        if (!accessToken || !currentUser) return;
-
-                        try {
-                            const playlistId = playlists.find(p => p.name === selectedImage.name)?.id;
-                            if (!playlistId) {
-                                throw new Error('Playlist ID not found');
-                            }
-
-                            const imageUrl = await uploadPlaylistCover(
-                                accessToken,
-                                playlistId,
-                                file,
-                                currentUser.id
-                            );
-
-                            // Update the UI with the new image
-                            setSelectedImage(prev => prev ? {
-                                ...prev,
-                                url: imageUrl
-                            } : null);
-
-                            // Update the playlist in the list
-                            setPlaylists(prev => prev.map(p => {
-                                if (p.id === playlistId && p.images && p.images.length > 0) {
-                                    return {
-                                        ...p,
-                                        images: [{
-                                            url: imageUrl,
-                                            height: p.images[0].height,
-                                            width: p.images[0].width
-                                        }, ...p.images.slice(1)]
-                                    };
-                                }
-                                return p;
-                            }));
-                        } catch (error) {
-                            console.error('Error uploading playlist cover:', error);
-                            alert('Failed to upload image. Please try again.');
-                        }
+                        await onImageUpload(
+                            file,
+                            accessToken || '',
+                            currentUser,
+                            playlists,
+                            selectedImage,
+                            setSelectedImage,
+                            setPlaylists
+                        );
                     }}
                 />
             )}
