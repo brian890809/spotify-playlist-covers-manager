@@ -57,11 +57,9 @@ export async function GET(request: NextRequest) {
     if (!accessToken) {
       return NextResponse.json({ error: 'No Spotify access token available' }, { status: 400 });
     }
-    
     // Fetch all playlists with pagination
     let allPlaylists: SimplifiedPlaylist[] = [];
     let nextUrl: string | null = 'https://api.spotify.com/v1/me/playlists?limit=50';
-    let initialResponse = null;
     
     // Continue fetching until there's no next URL
     while (nextUrl) {
@@ -70,7 +68,7 @@ export async function GET(request: NextRequest) {
           Authorization: `Bearer ${accessToken}`,
         },
       });
-
+      console.log('Number of playlists total:', response.data.total)
       // Add playlists to our collection
       allPlaylists = [...allPlaylists, ...response.data.items];
       
