@@ -1,11 +1,13 @@
 'use client'
 import { ListMusic, Home } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 import ThemeSwitcher from './ThemeSwitcher'
 
 interface SpotifyUser {
     id: string;
     display_name: string;
+    profileUrl: string;
 }
 
 export default function Sidebar({
@@ -47,9 +49,7 @@ export default function Sidebar({
                 <div className="p-3 rounded-md bg-gray-200 dark:bg-[#282828]">
                     <p className="font-medium text-sm mb-2">Logged in as:</p>
                     <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-[#1DB954] rounded-full flex items-center justify-center text-white font-bold">
-                            {currentUser.display_name.charAt(0)}
-                        </div>
+                        <Image src={currentUser.profileUrl} alt="Profile Picture" width={32} height={32} className="w-8 h-8 rounded-full" />
                         <span className="font-semibold">{currentUser.display_name}</span>
                     </div>
 

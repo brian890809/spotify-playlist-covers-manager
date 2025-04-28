@@ -68,7 +68,6 @@ export async function GET(request: NextRequest) {
           Authorization: `Bearer ${accessToken}`,
         },
       });
-      console.log('Number of playlists total:', response.data.total)
       // Add playlists to our collection
       allPlaylists = [...allPlaylists, ...response.data.items];
       
