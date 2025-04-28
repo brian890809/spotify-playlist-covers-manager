@@ -1,11 +1,13 @@
 'use client'
 
-import { useState, useContext } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import Image from 'next/image';
 import SpotifyImageDialog from '@/components/SpotifyImageDialog';
 import { Music2 } from 'lucide-react';
 import { onImageUpload } from './functions';
 import SpotifyDataContext from '@/utils/SpotifyContext';
+import { createSupabaseClient } from "@/lib/supabase";
+import { useStackApp, useUser } from "@stackframe/stack";
 
 export default function DashboardPage() {
     const [showOnlyOwnedPlaylists, setShowOnlyOwnedPlaylists] = useState(false);
@@ -31,6 +33,13 @@ export default function DashboardPage() {
         if (!open) setSelectedImage(null);
     };
 
+    const supabase = createSupabaseClient();
+    useEffect(() => {
+        supabase.from("playlists").select().then(({ data }) => {
+            console.log(data);
+            console.log(data?.length);
+        });
+    }, []);
     if (loading) {
         return (
             <div className="flex-1 p-4 md:p-8 flex items-center justify-center">

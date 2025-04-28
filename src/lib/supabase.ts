@@ -1,4 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
+import { createBrowserClient } from "@supabase/ssr";
+import { getSupabaseJwt } from "@/utils/actions";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 // For server-side usage
@@ -15,7 +17,10 @@ export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
 });
 
 // Create a Supabase client for client-side operations
-export const createBrowserClient = () => {
-  // Use the anon key for client-side operations
-  return createClient(supabaseUrl, supabaseAnonKey);
-};
+export const createSupabaseClient = () => {
+  return createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { accessToken: async () => await getSupabaseJwt() || "" }
+  );
+}
