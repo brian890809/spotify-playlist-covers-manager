@@ -10,10 +10,10 @@ export async function getApiKeys() {
 }
 
 export async function saveApiKeys(apiKeys: ApiKeyEntry[]) {
-    const convertToReadOnly = apiKeys.map(key => ({ ...key, readonly: true }));
+    const convertToReadOnly: ReadonlyJson[] = apiKeys.map(key => ({ ...key }));
     await user.update({
         serverMetadata: {
-            genAiKeys: convertToReadOnly as readonly ReadonlyJson[],
+            genAiKeys: convertToReadOnly,
         },
     });
 }
