@@ -1,4 +1,4 @@
-import { Playlist, SpotifyUser } from '../layout';
+import { Playlist, SpotifyUser } from '@/app/user/layout';
 
 /**
  * Converts an image file to a base64 string

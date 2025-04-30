@@ -1,3 +1,5 @@
+'use server'
+
 import { stackServerApp } from '@/stack';
 import { ApiKeyEntry } from '@/types/types';
 import { ReadonlyJson } from '@stackframe/stack-shared/dist/utils/json';

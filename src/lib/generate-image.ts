@@ -1,6 +1,6 @@
-export async function generateImage(prompt: string, playlistId: string, userId: string) {
+export async function onGenerateImage(prompt: string, playlistId: string, userId: string, key: string) {
     try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/generate-photos`, {
+        const response = await fetch(`/api/generate-photos`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -8,7 +8,8 @@ export async function generateImage(prompt: string, playlistId: string, userId: 
             body: JSON.stringify({
                 prompt,
                 playlistId,
-                userId
+                userId,
+                key
             }),
         });
 

@@ -25,6 +25,15 @@ interface SpotifyImageDialogProps {
     userId?: string
 }
 
+const BlockGenAiUse = (
+    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm rounded-lg opacity-0 group-hover:opacity-100 flex items-center justify-center z-10 transition-all duration-300 ease-in-out">
+        <div className="bg-white dark:bg-[#2a2a2a] text-gray-900 dark:text-white p-4 rounded-lg shadow-xl max-w-md w-4/5 text-center transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300 ease-out border border-gray-200 dark:border-[#444]">
+            <p className="font-semibold text-lg mb-1">AI Generation Feature</p>
+            <p>This feature is only available for premium users</p>
+        </div>
+    </div>
+)
+
 export default function SpotifyImageDialog({
     isOpen,
     onOpenChange,
@@ -41,6 +50,8 @@ export default function SpotifyImageDialog({
     const [isGenerating, setIsGenerating] = useState(false);
     const [recentImages, setRecentImages] = useState<string[]>([]);
     const [isUploading, setIsUploading] = useState(false);
+
+    const [canUseGenAi, setCanUseGenAi] = useState<boolean>(true)
 
     // Load recent images from supabase 'images' table and update recentImages state
     useEffect(() => {
@@ -165,12 +176,7 @@ export default function SpotifyImageDialog({
 
                         {/* AI Prompt */}
                         <div className="mb-6 relative group">
-                            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm rounded-lg opacity-0 group-hover:opacity-100 flex items-center justify-center z-10 transition-all duration-300 ease-in-out">
-                                <div className="bg-white dark:bg-[#2a2a2a] text-gray-900 dark:text-white p-4 rounded-lg shadow-xl max-w-md w-4/5 text-center transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300 ease-out border border-gray-200 dark:border-[#444]">
-                                    <p className="font-semibold text-lg mb-1">AI Generation Feature</p>
-                                    <p>This feature is currently under development and will be available soon!</p>
-                                </div>
-                            </div>
+                            {!canUseGenAi && BlockGenAiUse}
                             <h3 className="text-gray-900 dark:text-white text-lg font-bold mb-2">Create a Cover with AI prompt:</h3>
                             <div className="flex gap-3">
                                 <input
@@ -179,11 +185,11 @@ export default function SpotifyImageDialog({
                                     onChange={(e) => setAiPrompt(e.target.value)}
                                     className="flex-grow p-3 rounded-md bg-gray-100 dark:bg-[#2a2a2a] text-gray-900 dark:text-white border border-gray-300 dark:border-[#333] focus:border-[#1DB954] focus:outline-none transition-colors"
                                     placeholder="Describe the cover you want..."
-                                    disabled
+                                    disabled={!canUseGenAi}
                                 />
                                 <button
                                     onClick={handleGenerateImage}
-                                    disabled
+                                    disabled={!canUseGenAi || !aiPrompt}
                                     className={`flex items-center gap-2 bg-[#1DB954] hover:bg-[#1ed760] text-black font-bold py-2 px-5 rounded-md whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed transition-colors`}
                                 >
                                     {isGenerating ? <RefreshCw className="animate-spin" size={18} /> : 'Generate'}
