@@ -8,6 +8,7 @@ import {
     DialogClose,
     DialogTitle
 } from '@/components/ui/dialog'
+import SelectModel from '@/components/SelectModel'
 import { XIcon, Upload, RefreshCw } from 'lucide-react'
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
 
@@ -50,6 +51,7 @@ export default function SpotifyImageDialog({
     const [isGenerating, setIsGenerating] = useState(false);
     const [recentImages, setRecentImages] = useState<string[]>([]);
     const [isUploading, setIsUploading] = useState(false);
+    const [selectedModel, setSelectedModel] = useState('default');
 
     const [canUseGenAi, setCanUseGenAi] = useState<boolean>(true)
 
@@ -194,6 +196,10 @@ export default function SpotifyImageDialog({
                                 >
                                     {isGenerating ? <RefreshCw className="animate-spin" size={18} /> : 'Generate'}
                                 </button>
+                            </div>
+                            {/* Model selector dropdown */}
+                            <div className="mt-1 flex items-end justify-end">
+                                <SelectModel selectedModel={selectedModel} setSelectedModel={setSelectedModel} />
                             </div>
                         </div>
 

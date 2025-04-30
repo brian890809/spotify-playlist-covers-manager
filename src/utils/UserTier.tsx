@@ -2,9 +2,9 @@
 
 import { stackServerApp } from '@/stack';
 
-const user = await stackServerApp.getUser({ or: 'redirect' });
 
 export async function checkStatus() {
+    const user = await stackServerApp.getUser({ or: 'redirect' });
     const { subscriptionPlan } = user.serverMetadata;
     return subscriptionPlan
 }

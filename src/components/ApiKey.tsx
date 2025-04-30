@@ -62,7 +62,7 @@ export default function ApiKey() {
 
             <div className="space-y-4">
                 {apiKeys.map((keyEntry, index) => (
-                    <div key={keyEntry.id} className="flex items-center space-x-2 p-4 border rounded-md">
+                    <div key={index} className="flex items-center space-x-2 p-4 border rounded-md">
                         <Select
                             value={keyEntry.llmType}
                             onValueChange={(value) => handleInputChange(keyEntry.id, 'llmType', value)}
@@ -79,7 +79,6 @@ export default function ApiKey() {
                         </Select>
 
                         <Input
-                            type="password" // Use password type to obscure the key
                             placeholder="Paste your API Key here"
                             value={keyEntry.apiKey}
                             onChange={(e) => handleInputChange(keyEntry.id, 'apiKey', e.target.value)}
