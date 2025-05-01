@@ -53,7 +53,7 @@ export default function SpotifyImageDialog({
     const [isUploading, setIsUploading] = useState(false);
     const [selectedModel, setSelectedModel] = useState('default');
 
-    const [canUseGenAi, setCanUseGenAi] = useState<boolean>(true)
+    const [canUseGenAi, setCanUseGenAi] = useState<boolean>(true) // TODO: Assuming the user can use GenAI by default, will check with API later
 
     // Load recent images from supabase 'images' table and update recentImages state
     useEffect(() => {
@@ -106,6 +106,21 @@ export default function SpotifyImageDialog({
         }
     };
 
+    const handleImageClick = async (imgUrl: string) => {
+        setIsUploading(true);
+        const response = await fetch('/api/update-cover', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ imgUrl, playlistId, userId }),
+        });
+        if (!response.ok) {
+            throw new Error('Failed to set playlist image');
+        }
+        setIsUploading(false);
+    };
+
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="bg-white dark:bg-[#121212] border-gray-300 dark:border-[#333333] sm:max-w-7xl w-[98vw] p-0 overflow-hidden rounded-xl shadow-2xl transition-colors duration-300">
@@ -153,6 +168,7 @@ export default function SpotifyImageDialog({
                                         <div
                                             key={index}
                                             className="aspect-square bg-gray-100 dark:bg-[#1e1e1e] rounded-md overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+                                            onClick={() => handleImageClick(img)}
                                         >
                                             <Image
                                                 src={img}

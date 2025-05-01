@@ -108,42 +108,81 @@ export async function POST(request: NextRequest) {
         );
       }
 
-    // 4. Insert the new image into Supabase
-    const imageId = uuidv4();
-    const { data: imageData, error: imageError } = await supabaseAdmin
+    // 4. Update the existing image in Supabase
+    const { data: existingImage, error: existingImageError } = await supabaseAdmin
       .from('images')
-      .insert({
-        id: imageId,
-        user_id: userData.id,
-        playlist_id: playlistData.id,
-        url: imageUrl,
-        spotify_image_id: spotify_image_id,
-        type: 'upload',
-        changed_at: new Date().toISOString()
-      })
-      .select()
+      .select('id')
+      .eq('spotify_image_id', spotify_image_id)
       .single();
-
-    if (imageError || !imageData) {
-      console.error('Supabase error at inserting image:', imageError);
+    
+    if (existingImageError) {
+      console.error('Supabase error at getting existing image:', existingImageError);
       return NextResponse.json(
-        { error: `Failed to insert image into Supabase: ${imageError?.message || 'Unknown error'}` },
+        { error: `Failed to get existing image from Supabase: ${existingImageError?.message || 'Image not found'}` },
         { status: 500 }
       );
     }
-
-    // 5. Update the playlist's current_cover
-    const { error: updateError } = await supabaseAdmin
+    
+    if (existingImage) {
+      const { error: updateImageError } = await supabaseAdmin
+        .from('images')
+        .update({
+          url: imageUrl,
+          changed_at: new Date().toISOString()
+        })
+        .eq('id', existingImage.id);
+      
+      // Update the playlist's current_cover
+      const { error: updateError } = await supabaseAdmin
       .from('playlists')
-      .update({ current_cover: imageId })
+      .update({ current_cover: existingImage.id })
       .eq('id', playlistData.id);
-
-    if (updateError) {
-      console.error('Supabase error at updating current_cover:', updateError);
-      return NextResponse.json(
-        { error: `Failed to update playlist current_cover: ${updateError.message}` },
-        { status: 500 }
-      );
+    
+      if (updateImageError) {
+        console.error('Supabase error at updating image:', updateImageError);
+        return NextResponse.json(
+          { error: `Failed to update image in Supabase: ${updateImageError?.message || 'Unknown error'}` },
+          { status: 500 }
+        );
+      }
+    } else {
+      // Insert the new image if it doesn't exist
+      const imageId = uuidv4();
+      const { data: imageData, error: imageError } = await supabaseAdmin
+        .from('images')
+        .insert({
+          id: imageId,
+          user_id: userData.id,
+          playlist_id: playlistData.id,
+          url: imageUrl,
+          spotify_image_id: spotify_image_id,
+          type: 'upload',
+          changed_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+    
+      if (imageError || !imageData) {
+        console.error('Supabase error at inserting image:', imageError);
+        return NextResponse.json(
+          { error: `Failed to insert image into Supabase: ${imageError?.message || 'Unknown error'}` },
+          { status: 500 }
+        );
+      }
+    
+      // Update the playlist's current_cover
+      const { error: updateError } = await supabaseAdmin
+        .from('playlists')
+        .update({ current_cover: imageId })
+        .eq('id', playlistData.id);
+    
+      if (updateError) {
+        console.error('Supabase error at updating current_cover:', updateError);
+        return NextResponse.json(
+          { error: `Failed to update playlist current_cover: ${updateError.message}` },
+          { status: 500 }
+        );
+      }
     }
 
     // Return success response with the new image URL
