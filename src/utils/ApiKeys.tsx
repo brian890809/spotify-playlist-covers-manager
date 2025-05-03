@@ -7,7 +7,7 @@ import { ReadonlyJson } from '@stackframe/stack-shared/dist/utils/json';
 
 export async function getApiKeys() {
     const user = await stackServerApp.getUser({ or: 'redirect' });
-    const { genAiKeys } = user.serverMetadata;
+    const { genAiKeys } = user.serverMetadata || {};
     return genAiKeys || [{}]
 }
 

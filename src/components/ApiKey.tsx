@@ -25,7 +25,7 @@ export default function ApiKey() {
 
     useEffect(() => {
         const fetchApiKeys = async () => {
-            const keys = await getApiKeys();
+            const keys = await getApiKeys() || [];
             setApiKeys(keys);
         };
         fetchApiKeys();

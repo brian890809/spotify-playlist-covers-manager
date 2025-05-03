@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     const account = await user.getConnectedAccount('spotify', { or: 'redirect' });
     const { accessToken } = await account.getAccessToken();
 
-    const { playlistId, base64Image, userId } = await request.json();
+    const { playlistId, base64Image, userId, type = "upload" } = await request.json();
 
     if (!accessToken || !playlistId || !base64Image || !userId) {
       return NextResponse.json(
