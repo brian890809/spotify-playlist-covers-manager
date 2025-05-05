@@ -37,6 +37,7 @@ export interface Playlist {
 export interface SpotifyUser {
     id: string;
     display_name: string;
+    profileUrl: string;
 }
 
 export default function UserLayout({ children }: { children: React.ReactNode }) {

@@ -159,3 +159,13 @@ export interface ApiError {
 export interface SpotifyApiError {
     error: ApiError;
 }
+
+
+/**
+ * Represents the structure of an API key entry.
+ */
+export interface ApiKeyEntry {
+    id: string;
+    llmType: string;
+    apiKey: string;
+}

@@ -4,7 +4,7 @@ import { useState, useContext } from 'react';
 import Image from 'next/image';
 import SpotifyImageDialog from '@/components/SpotifyImageDialog';
 import { Music2 } from 'lucide-react';
-import { onImageUpload } from './functions';
+import { onImageUpload } from '@/lib/upload-image';
 import SpotifyDataContext from '@/utils/SpotifyContext';
 
 export default function DashboardPage() {
