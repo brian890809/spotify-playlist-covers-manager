@@ -4,9 +4,96 @@ import { v4 as uuidv4 } from 'uuid';
 import { getSpotifyImageId } from '@/lib/utils';
 import { stackServerApp } from '@/stack';
 
+// Helper function to handle background syncing with Supabase
+async function syncWithSupabase(playlistId: string, userId: string, imageUrl: string, spotify_image_id: string, type: string) {
+  try {
+    // 3. Get playlist and user from Supabase
+    const { data: playlistData, error: playlistError } = await supabaseAdmin
+      .from('playlists')
+      .select('id')
+      .eq('spotify_id', playlistId)
+      .single();
+    if (playlistError || !playlistData) {
+      console.error('Supabase error at getting playlist:', playlistError);
+      return;
+    }
+
+    const { data: userData, error: userError } = await supabaseAdmin
+      .from('users')
+      .select('id')
+      .eq('spotify_id', userId)
+      .single();
+    if (userError || !userData) {
+      console.error('Supabase error at getting user:', userError);
+      return;
+    }
+
+    // 4. Update the existing image in Supabase
+    const { data: existingImage } = await supabaseAdmin
+      .from('images')
+      .select('id')
+      .eq('spotify_image_id', spotify_image_id)
+      .single();
+    
+    if (existingImage) {
+      const { error: updateImageError } = await supabaseAdmin
+        .from('images')
+        .update({
+          url: imageUrl,
+          changed_at: new Date().toISOString()
+        })
+        .eq('id', existingImage.id);
+      
+      // Update the playlist's current_cover
+      const { error: updateError } = await supabaseAdmin
+      .from('playlists')
+      .update({ current_cover: existingImage.id })
+      .eq('id', playlistData.id);
+    
+      if (updateImageError) {
+        console.error('Supabase error at updating image:', updateImageError);
+      }
+    } else {
+      // Insert the new image if it doesn't exist
+      const imageId = uuidv4();
+      const { data: imageData, error: imageError } = await supabaseAdmin
+        .from('images')
+        .insert({
+          id: imageId,
+          user_id: userData.id,
+          playlist_id: playlistData.id,
+          url: imageUrl,
+          spotify_image_id: spotify_image_id,
+          type: type,
+          changed_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+    
+      if (imageError || !imageData) {
+        console.error('Supabase error at inserting image:', imageError);
+        return;
+      }
+    
+      // Update the playlist's current_cover
+      const { error: updateError } = await supabaseAdmin
+        .from('playlists')
+        .update({ current_cover: imageId })
+        .eq('id', playlistData.id);
+    
+      if (updateError) {
+        console.error('Supabase error at updating current_cover:', updateError);
+      }
+    }
+    
+    console.log('Background sync completed successfully');
+  } catch (error) {
+    console.error('Error in background sync:', error);
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
-
     const user = await stackServerApp.getUser({ or: 'redirect' });
     const account = await user.getConnectedAccount('spotify', { or: 'redirect' });
     const { accessToken } = await account.getAccessToken();
@@ -72,7 +159,6 @@ export async function POST(request: NextRequest) {
 
     const images = await imagesResponse.json();
     const imageUrl = images[0]?.url;
-    const spotify_image_id = getSpotifyImageId(imageUrl);
 
     if (!imageUrl) {
       return NextResponse.json(
@@ -81,112 +167,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 3. Get playlist and user from Supabase
-    const { data: playlistData, error: playlistError } = await supabaseAdmin
-      .from('playlists')
-      .select('id')
-      .eq('spotify_id', playlistId)
-      .single();
-      if (playlistError || !playlistData) {
-        console.error('Supabase error at getting playlist:', playlistError);
-        return NextResponse.json(
-          { error: `Failed to get playlist from Supabase: ${playlistError?.message || 'Playlist not found'}` },
-          { status: 500 }
-        );
-      }
+    const spotify_image_id = getSpotifyImageId(imageUrl);
 
-      const { data: userData, error: userError } = await supabaseAdmin
-        .from('users')
-        .select('id')
-        .eq('spotify_id', userId)
-        .single();
-      if (userError || !userData) {
-        console.error('Supabase error at getting user:', userError);
-        return NextResponse.json(
-          { error: `Failed to get user from Supabase: ${userError?.message || 'User not found'}` },
-          { status: 500 }
-        );
-      }
-
-    // 4. Update the existing image in Supabase
-    const { data: existingImage, error: existingImageError } = await supabaseAdmin
-      .from('images')
-      .select('id')
-      .eq('spotify_image_id', spotify_image_id)
-      .single();
-    
-    if (existingImageError) {
-      console.error('Supabase error at getting existing image:', existingImageError);
-      return NextResponse.json(
-        { error: `Failed to get existing image from Supabase: ${existingImageError?.message || 'Image not found'}` },
-        { status: 500 }
-      );
-    }
-    
-    if (existingImage) {
-      const { error: updateImageError } = await supabaseAdmin
-        .from('images')
-        .update({
-          url: imageUrl,
-          changed_at: new Date().toISOString()
-        })
-        .eq('id', existingImage.id);
-      
-      // Update the playlist's current_cover
-      const { error: updateError } = await supabaseAdmin
-      .from('playlists')
-      .update({ current_cover: existingImage.id })
-      .eq('id', playlistData.id);
-    
-      if (updateImageError) {
-        console.error('Supabase error at updating image:', updateImageError);
-        return NextResponse.json(
-          { error: `Failed to update image in Supabase: ${updateImageError?.message || 'Unknown error'}` },
-          { status: 500 }
-        );
-      }
+    // Make sure spotify_image_id is not undefined before passing it to the background task
+    if (spotify_image_id) {
+      syncWithSupabase(playlistId, userId, imageUrl, spotify_image_id, type)
+        .catch(error => console.error('Error in background sync process:', error));
+      // Start the Supabase sync in the background without awaiting it
     } else {
-      // Insert the new image if it doesn't exist
-      const imageId = uuidv4();
-      const { data: imageData, error: imageError } = await supabaseAdmin
-        .from('images')
-        .insert({
-          id: imageId,
-          user_id: userData.id,
-          playlist_id: playlistData.id,
-          url: imageUrl,
-          spotify_image_id: spotify_image_id,
-          type: 'upload',
-          changed_at: new Date().toISOString()
-        })
-        .select()
-        .single();
-    
-      if (imageError || !imageData) {
-        console.error('Supabase error at inserting image:', imageError);
-        return NextResponse.json(
-          { error: `Failed to insert image into Supabase: ${imageError?.message || 'Unknown error'}` },
-          { status: 500 }
-        );
-      }
-    
-      // Update the playlist's current_cover
-      const { error: updateError } = await supabaseAdmin
-        .from('playlists')
-        .update({ current_cover: imageId })
-        .eq('id', playlistData.id);
-    
-      if (updateError) {
-        console.error('Supabase error at updating current_cover:', updateError);
-        return NextResponse.json(
-          { error: `Failed to update playlist current_cover: ${updateError.message}` },
-          { status: 500 }
-        );
-      }
+      console.error('Unable to extract spotify_image_id from imageUrl');
     }
 
-    // Return success response with the new image URL
+    // Return success response with the new image URL immediately
     return NextResponse.json({ imageUrl });
+    
   } catch (error) {
     console.error('Server error:', error);
     return NextResponse.json(

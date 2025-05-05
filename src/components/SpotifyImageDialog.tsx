@@ -12,6 +12,7 @@ import SelectModel from '@/components/SelectModel'
 import { XIcon, Upload, RefreshCw } from 'lucide-react'
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
 import { onGenerateImage } from '@/lib/generate-image'
+import saveGeneratedImage from '@/lib/save-generated-image'
 
 interface SpotifyImageDialogProps {
     isOpen: boolean
@@ -100,13 +101,25 @@ export default function SpotifyImageDialog({
             setIsGenerating(true);
             try {
                 // Call the Gemini-powered image generation function
-                const generatedImageUrl = await onGenerateImage(aiPrompt, playlistName || "", playlistId, userId);
+                const response = await onGenerateImage(aiPrompt, playlistName || "");
 
-                // Update the displayed image
-                // setDisplayedImage(generatedImageUrl);
+                // Now we have the image bytes from the server, save it using our client function
+                if (response && response.imageBytes) {
+                    const uploadResult = await saveGeneratedImage(
+                        response.imageBytes,
+                        playlistId,
+                        userId
+                    );
 
-                // Add current image to recent images after generation
-                // setRecentImages(prev => [generatedImageUrl, ...prev.slice(0, 3)]);
+                    if (uploadResult && uploadResult.imageUrl) {
+                        // Update the displayed image
+                        setDisplayedImage(uploadResult.imageUrl);
+
+                        // Add to recent images if needed
+                        setRecentImages(prev => [uploadResult.imageUrl, ...prev.slice(0, 3)]);
+                    }
+                }
+
                 setAiPrompt('');
             } catch (error) {
                 console.error('Error generating image:', error);

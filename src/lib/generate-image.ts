@@ -1,64 +1,57 @@
 'use server'
 
 import { GoogleGenAI } from "@google/genai";
-import generateSpotifyPrompt from "@/prompts/generate-album-cover";
+import {generateSpotifyPrompt, generateSpotifyPromptWithoutPlaylistName} from "@/prompts/generate-album-cover";
+import compressImageBuffer from "@/lib/compress-image";
 
-export async function onGenerateImage(prompt: string, playlistName:string, playlistId: string, userId: string) {
+const sanitizeBase64 = (base64: string) => {
+    // Remove any data URL prefix (like "data:image/png;base64,") if present
+    return base64.replace(/^data:image\/\w+;base64,/, '');
+};
+
+const imageToKb = (base64: string) => Math.ceil((base64.length * 6) / 8 / 1000 );
+const maxImageSize = 256; // 256 KB
+
+export async function onGenerateImage(prompt: string, playlistName:string) {
     const apiKey = process.env.DEFAULT_GEMINI_API_KEY;
-    console.log(apiKey)
     try {
         // Initialize the Google AI with the provided API key
         const genAI = new GoogleGenAI({apiKey});
-        const genAiPrompt = generateSpotifyPrompt(playlistName, prompt);
-        console.log("Generated Prompt: ", genAiPrompt);
+        const genAiPrompt = playlistName !== "" 
+            ? generateSpotifyPrompt(playlistName, prompt) 
+            : generateSpotifyPromptWithoutPlaylistName(prompt);
+
         // Get the Generative Model for image generation
-        const result = await genAI.models.generateImages({
+        const response = await genAI.models.generateImages({
             model: 'imagen-3.0-generate-002',
             prompt: genAiPrompt,
             config: { numberOfImages: 1 },
           });
         
         // Process the response to get the image data
-        const response = result?.generatedImages?.[0]?.image;
-        const imageBytes = response?.imageBytes;
-        if (!imageBytes) {
-            throw new Error('No image bytes found in the response');
+        if (!response.generatedImages?.[0]?.image?.imageBytes) {
+            throw new Error('No image generated');
+        }
+        const imageBytes = response.generatedImages[0].image.imageBytes;
+        const sanitizedImageBytes = sanitizeBase64(imageBytes);
+        
+        // Check the size of the image
+        const imageSizeKb = imageToKb(sanitizedImageBytes);
+        const imageBuffer = Buffer.from(imageBytes, 'base64');
+        if (imageSizeKb > maxImageSize) {
+            // compress image
+            const compressedBuffer = await compressImageBuffer(imageBuffer);
+            return {
+                imageBytes: compressedBuffer.toString('base64'),
+            };
         }
         
-        // Store the generated image URL and metadata in your backend
-        const imageData = await saveGeneratedImage(prompt, imageBytes, playlistId, userId);
-        
-        return imageData.imageUrl;
+        // Return the sanitized image bytes instead of saving it
+        return {
+            imageBytes: sanitizedImageBytes,
+        };
     } catch (error) {
         console.error('Error generating image with Gemini:', error);
-        throw error;
-    }
-}
-
-// Helper function to save the generated image data
-async function saveGeneratedImage(prompt: string, imageBytes: string, playlistId: string, userId: string) {
-    // Here we still use an API endpoint to save the image data to your backend/database
-    try {
-        const response = await fetch('/api/upload-cover', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                playlistId,
-                base64Image: imageBytes,
-                userId,
-                type: 'ai',
-            }),
-        });
-
-        if (!response.ok) {
-            throw new Error(`Failed to save generated image: ${response.status}`);
-        }
-
-        return await response.json();
-    } catch (error) {
-        console.error('Error saving generated image:', error);
         throw error;
     }
 }
