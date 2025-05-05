@@ -61,8 +61,8 @@ export default function ApiKey() {
             <h1 className="text-2xl font-semibold">Manage LLM API Keys</h1>
 
             <div className="space-y-4">
-                {apiKeys.map((keyEntry, index) => (
-                    <div key={index} className="flex items-center space-x-2 p-4 border rounded-md">
+                {apiKeys.map((keyEntry) => (
+                    <div key={keyEntry.id} className="flex items-center space-x-2 p-4 border rounded-md">
                         <Select
                             value={keyEntry.llmType}
                             onValueChange={(value) => handleInputChange(keyEntry.id, 'llmType', value)}
