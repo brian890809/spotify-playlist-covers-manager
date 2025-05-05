@@ -238,7 +238,7 @@ export default function SpotifyImageDialog({
                                     onChange={(e) => setAiPrompt(e.target.value)}
                                     className="flex-grow p-3 rounded-md bg-gray-100 dark:bg-[#2a2a2a] text-gray-900 dark:text-white border border-gray-300 dark:border-[#333] focus:border-[#1DB954] focus:outline-none transition-colors"
                                     placeholder="Describe the cover you want..."
-                                    disabled={!canUseGenAi}
+                                    disabled={!canUseGenAi || !canEdit}
                                 />
                                 <button
                                     onClick={handleGenerateImage}
