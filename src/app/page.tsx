@@ -14,7 +14,7 @@ export default function Home() {
       <header className="w-full p-4 flex justify-between items-center">
         <div className="flex items-center gap-2">
           <span className="text-xl font-bold">
-            <span className="text-[#1DB954]">Spotify</span> Playlist Manager
+            Playlist Manager for <span className="text-[#1DB954]">Spotify</span>
           </span>
         </div>
         <div className="flex items-center gap-3">
@@ -87,7 +87,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="w-full p-6 text-center border-t border-gray-200 dark:border-gray-800">
         <p className="text-sm text-gray-500 dark:text-gray-400">
-          © {new Date().getFullYear()} Spotify Playlist Manager. Not affiliated with Spotify AB.
+          © {new Date().getFullYear()} Playlist Manager for Spotify. Not affiliated with Spotify AB.
         </p>
       </footer>
     </div>
