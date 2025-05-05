@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Spotify Playlist Manager",
+  title: "Playlist Manager for Spotify",
   description: "Manager your Spotify playlists with ease",
 };
 

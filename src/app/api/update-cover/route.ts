@@ -1,5 +1,4 @@
 import { supabaseAdmin } from '@/lib/supabase';
-import { v4 as uuidv4 } from 'uuid';
 import { getSpotifyImageId } from '@/lib/utils';
 import { stackServerApp } from '@/stack';
 import { NextRequest, NextResponse } from "next/server";
@@ -47,8 +46,8 @@ export async function POST(req: NextRequest) {
                 headers: Object.fromEntries(uploadResponse.headers.entries())
             });
             } catch (e) {
-            errorText = 'Could not parse error response';
-            console.error('Failed to get error text:', e);
+                errorText = 'Could not parse error response';
+                console.error('Failed to get error text:', e);
             }
             
             return NextResponse.json(
@@ -72,7 +71,8 @@ export async function POST(req: NextRequest) {
         }
     
         const images = await imagesResponse.json();
-        const imageUrl = images[0]?.url;
+        const imageUrl = images[0]?.url; // new image URL
+        const newImageId = getSpotifyImageId(imageUrl);
 
         if (!imageUrl) {
             return NextResponse.json(
@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
             );
         }
     
-        // 3. Get playlist and user from Supabase
+        // 3. Get playlist from Supabase
         const { data: playlistData, error: playlistError } = await supabaseAdmin
             .from('playlists')
             .select('id')
@@ -93,20 +93,7 @@ export async function POST(req: NextRequest) {
                 { error: `Failed to get playlist from Supabase: ${playlistError?.message || 'Playlist not found'}` },
                 { status: 500 }
             );
-            }
-    
-            const { data: userData, error: userError } = await supabaseAdmin
-            .from('users')
-            .select('id')
-            .eq('spotify_id', userId)
-            .single();
-            if (userError || !userData) {
-            console.error('Supabase error at getting user:', userError);
-            return NextResponse.json(
-                { error: `Failed to get user from Supabase: ${userError?.message || 'User not found'}` },
-                { status: 500 }
-            );
-            }
+        }
     
         // 4. Update the existing image in Supabase
         const { data: existingImage, error: existingImageError } = await supabaseAdmin
@@ -127,7 +114,8 @@ export async function POST(req: NextRequest) {
             .from('images')
             .update({
             url: imageUrl,
-            changed_at: new Date().toISOString()
+            changed_at: new Date().toISOString(),
+            spotify_image_id: newImageId,
             })
             .eq('id', existingImage.id);
             
