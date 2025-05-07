@@ -4,7 +4,7 @@ import { useState, useContext, useEffect } from 'react';
 import Image from 'next/image';
 import SpotifyImageDialog from '@/components/SpotifyImageDialog';
 import { Music2 } from 'lucide-react';
-import { onImageUpload } from './functions';
+import { onImageUpload } from '@/lib/upload-image';
 import SpotifyDataContext from '@/utils/SpotifyContext';
 import { createSupabaseClient } from "@/lib/supabase";
 import { useStackApp, useUser } from "@stackframe/stack";

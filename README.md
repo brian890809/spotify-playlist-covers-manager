@@ -38,18 +38,19 @@ yarn install
 Create a `.env.local` file with your own API credentials:
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
-SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+# Stack credentials
+NEXT_PUBLIC_STACK_PROJECT_ID=
+NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY=
+STACK_SECRET_SERVER_KEY=
 
-SPOTIFY_CLIENT_ID=your-spotify-client-id
-NEXT_PUBLIC_SPOTIFY_CLIENT_ID=your-spotify-client-id
-SPOTIFY_CLIENT_SECRET=your-spotify-client-secret
-SPOTIFY_REDIRECT_URI=http://127.0.0.1:3000/api/callback
+# Supabase credentials
+NEXT_PUBLIC_SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_JWT_SECRET=
 
-NEXT_PUBLIC_STACK_PROJECT_ID=your-stack-project-id
-NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY=your-stack-publishable-client-key
-STACK_SECRET_SERVER_KEY=your-stack-secret-server-key
+# Gen AI key
+DEFAULT_GEMINI_API_KEY=
 ```
 
 > 🔑 **Important:** You must supply your own Spotify and Supabase keys.  

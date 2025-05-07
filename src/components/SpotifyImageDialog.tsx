@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import {
     Dialog,
@@ -8,8 +8,11 @@ import {
     DialogClose,
     DialogTitle
 } from '@/components/ui/dialog'
+import SelectModel from '@/components/SelectModel'
 import { XIcon, Upload, RefreshCw } from 'lucide-react'
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
+import { onGenerateImage } from '@/lib/generate-image'
+import saveGeneratedImage from '@/lib/save-generated-image'
 
 interface SpotifyImageDialogProps {
     isOpen: boolean
@@ -25,6 +28,15 @@ interface SpotifyImageDialogProps {
     userId?: string
 }
 
+const BlockGenAiUse = (
+    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm rounded-lg opacity-0 group-hover:opacity-100 flex items-center justify-center z-10 transition-all duration-300 ease-in-out">
+        <div className="bg-white dark:bg-[#2a2a2a] text-gray-900 dark:text-white p-4 rounded-lg shadow-xl max-w-md w-4/5 text-center transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300 ease-out border border-gray-200 dark:border-[#444]">
+            <p className="font-semibold text-lg mb-1">AI Generation Feature</p>
+            <p>This feature is only available for premium users</p>
+        </div>
+    </div>
+)
+
 export default function SpotifyImageDialog({
     isOpen,
     onOpenChange,
@@ -34,13 +46,21 @@ export default function SpotifyImageDialog({
     playlistId,
     canEdit = false,
     onImageUpload,
-    onGenerateWithAI,
     userId
 }: SpotifyImageDialogProps) {
     const [aiPrompt, setAiPrompt] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
     const [recentImages, setRecentImages] = useState<string[]>([]);
     const [isUploading, setIsUploading] = useState(false);
+    const [selectedModel, setSelectedModel] = useState('default');
+    const [displayedImage, setDisplayedImage] = useState(imageUrl);
+
+    const [canUseGenAi, setCanUseGenAi] = useState<boolean>(true) // TODO: Assuming the user can use GenAI by default, will check with API later
+
+    // Update displayedImage when imageUrl prop changes
+    useEffect(() => {
+        setDisplayedImage(imageUrl);
+    }, [imageUrl]);
 
     // Load recent images from supabase 'images' table and update recentImages state
     useEffect(() => {
@@ -77,18 +97,62 @@ export default function SpotifyImageDialog({
     };
 
     const handleGenerateImage = async () => {
-        if (aiPrompt && onGenerateWithAI) {
+        if (aiPrompt && playlistId && userId) {
             setIsGenerating(true);
             try {
-                await onGenerateWithAI(aiPrompt);
-                // Add current image to recent images after generation
-                setRecentImages(prev => [imageUrl, ...prev.slice(0, 3)]);
+                // Call the Gemini-powered image generation function
+                const response = await onGenerateImage(aiPrompt, playlistName || "");
+
+                // Now we have the image bytes from the server, save it using our client function
+                if (response && response.imageBytes) {
+                    const uploadResult = await saveGeneratedImage(
+                        response.imageBytes,
+                        playlistId,
+                        userId
+                    );
+
+                    if (uploadResult && uploadResult.imageUrl) {
+                        // Update the displayed image
+                        setDisplayedImage(uploadResult.imageUrl);
+
+                        // Add to recent images if needed
+                        setRecentImages(prev => [uploadResult.imageUrl, ...prev.slice(0, 3)]);
+                    }
+                }
+
                 setAiPrompt('');
             } catch (error) {
                 console.error('Error generating image:', error);
             } finally {
                 setIsGenerating(false);
             }
+        }
+    };
+
+    const handleImageClick = async (imgUrl: string) => {
+        // Immediately update the displayed image for better UX
+        setDisplayedImage(imgUrl);
+
+        setIsUploading(true);
+        try {
+            const response = await fetch('/api/update-cover', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ imgUrl, playlistId, userId }),
+            });
+            if (!response.ok) {
+                setDisplayedImage(imageUrl);
+                throw new Error('Failed to set playlist image');
+                // If there's an error, revert to the original image
+            }
+        } catch (error) {
+            console.error('Error updating cover:', error);
+            // Revert to the original image on error
+            setDisplayedImage(imageUrl);
+        } finally {
+            setIsUploading(false);
         }
     };
 
@@ -110,7 +174,7 @@ export default function SpotifyImageDialog({
                         {/* Image container */}
                         <div className="relative flex-grow flex items-center justify-center bg-gray-100 dark:bg-[#1e1e1e] rounded-lg overflow-hidden">
                             <Image
-                                src={imageUrl}
+                                src={displayedImage}
                                 alt={altText}
                                 width={400}
                                 height={400}
@@ -139,6 +203,7 @@ export default function SpotifyImageDialog({
                                         <div
                                             key={index}
                                             className="aspect-square bg-gray-100 dark:bg-[#1e1e1e] rounded-md overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+                                            onClick={() => handleImageClick(img)}
                                         >
                                             <Image
                                                 src={img}
@@ -163,7 +228,8 @@ export default function SpotifyImageDialog({
                         </div>
 
                         {/* AI Prompt */}
-                        <div className="mb-6">
+                        <div className="mb-6 relative group">
+                            {!canUseGenAi && BlockGenAiUse}
                             <h3 className="text-gray-900 dark:text-white text-lg font-bold mb-2">Create a Cover with AI prompt:</h3>
                             <div className="flex gap-3">
                                 <input
@@ -172,16 +238,20 @@ export default function SpotifyImageDialog({
                                     onChange={(e) => setAiPrompt(e.target.value)}
                                     className="flex-grow p-3 rounded-md bg-gray-100 dark:bg-[#2a2a2a] text-gray-900 dark:text-white border border-gray-300 dark:border-[#333] focus:border-[#1DB954] focus:outline-none transition-colors"
                                     placeholder="Describe the cover you want..."
-                                    disabled={!canEdit || isGenerating}
+                                    disabled={!canUseGenAi || !canEdit}
                                 />
                                 <button
                                     onClick={handleGenerateImage}
-                                    disabled={!aiPrompt || isGenerating || !canEdit}
+                                    disabled={!canUseGenAi || !aiPrompt}
                                     className={`flex items-center gap-2 bg-[#1DB954] hover:bg-[#1ed760] text-black font-bold py-2 px-5 rounded-md whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed transition-colors`}
                                 >
                                     {isGenerating ? <RefreshCw className="animate-spin" size={18} /> : 'Generate'}
                                 </button>
                             </div>
+                            {/* Model selector dropdown */}
+                            {/* <div className="mt-1 flex items-end justify-end">
+                                <SelectModel selectedModel={selectedModel} setSelectedModel={setSelectedModel} />
+                            </div> */}
                         </div>
 
                         {/* Upload */}
