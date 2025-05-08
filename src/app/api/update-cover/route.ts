@@ -1,4 +1,4 @@
-import { supabaseAdmin, supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 import { getSpotifyImageId } from '@/lib/utils';
 import { stackServerApp } from '@/stack';
 import { NextRequest, NextResponse } from "next/server";

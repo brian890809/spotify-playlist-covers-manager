@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin, supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 
 // get playlist image history from supabase
 export async function GET(request: NextRequest) {

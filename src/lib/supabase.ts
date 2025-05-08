@@ -3,13 +3,11 @@ import { createBrowserClient } from "@supabase/ssr";
 import { getSupabaseJwt } from "@/utils/actions";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-// For server-side usage
+// For admin usage
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-// For client-side usage
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 // Create a Supabase client with the service role key for server-side operations
-export const supabaseAdmin = createClient(supabaseUrl, supabaseAnonKey, {
+export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
   auth: {
     autoRefreshToken: false,
     persistSession: false,
