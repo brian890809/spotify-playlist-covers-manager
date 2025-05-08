@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 
 // get playlist image history from supabase
 export async function GET(request: NextRequest) {
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     }
     
     // get user_id
-    const { data: userData, error: userError } = await supabaseAdmin
+    const { data: userData, error: userError } = await supabase
     .from('users')
     .select('id')
     .eq('spotify_id', userId)
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     }
 
     // get playlist_id
-    const { data: playListData, error: playlistError } = await supabaseAdmin
+    const { data: playListData, error: playlistError } = await supabase
     .from('playlists')
     .select('id')
     .eq('spotify_id', playlistId)
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
 
 
     // Playlist found, proceed...
-    let query = supabaseAdmin
+    let query = supabase
       .from('images')
       .select('url, changed_at')
       .eq('user_id', userData.id)

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import axios, { AxiosResponse } from 'axios';
 import { stackServerApp } from '@/stack';
 
@@ -41,7 +41,7 @@ interface SpotifyPagingObject<T> {
 type SpotifyPlaylistsResponse = SpotifyPagingObject<SimplifiedPlaylist>;
 
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Get authenticated user from Stack Auth
     const user = await stackServerApp.getUser({ or: 'redirect' });
