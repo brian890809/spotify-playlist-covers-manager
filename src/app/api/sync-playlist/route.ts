@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
-import { supabaseAdmin } from '@/lib/supabase';
+import { supabaseAdmin, supabase } from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
 import { getSpotifyImageId } from '@/lib/utils';
 import { stackServerApp } from '@/stack';
 
 // Helper function to process playlists and images
-async function processPlaylistsAndImages(playlists: any[], userId: string, spotifyId: string, accessToken: string) {
+async function processPlaylistsAndImages(playlists: any[], userId: string, spotifyId: string, accessToken: string, stackUserId: string) {
   try {
     // Filter for playlists owned by the user
     const ownedPlaylists = playlists.filter((playlist) => playlist.owner.id === spotifyId);
@@ -15,7 +15,7 @@ async function processPlaylistsAndImages(playlists: any[], userId: string, spoti
     // Process each playlist
     for (const playlist of ownedPlaylists) {
       // First, check if playlist already exists by spotify_id
-      const { data: existingPlaylist } = await supabaseAdmin
+      const { data: existingPlaylist } = await supabase
         .from('playlists')
         .select('id')
         .eq('spotify_id', playlist.id)
@@ -25,13 +25,14 @@ async function processPlaylistsAndImages(playlists: any[], userId: string, spoti
       const playlist_id = existingPlaylist?.id || uuidv4();
       
       // Insert or update playlist into Supabase
-      const { data: playlistData, error: playlistError } = await supabaseAdmin
+      const { data: playlistData, error: playlistError } = await supabase
         .from('playlists')
         .upsert({
           id: playlist_id,
           spotify_id: playlist.id,
           user_id: userId,
           name: playlist.name,
+          stack_auth_user_id: stackUserId,
         })
         .select()
         .single();
@@ -47,13 +48,13 @@ async function processPlaylistsAndImages(playlists: any[], userId: string, spoti
         
         // Check if cover already exists by spotify image id
         const imageId = getSpotifyImageId(coverUrl);
-        const { data: existingImage, error } = await supabaseAdmin
+        const { data: existingImage, error } = await supabase
           .from('images')
           .select('id, url')
           .eq('spotify_image_id', imageId);
 
         if (error) {
-          console.error('Error upserting image:', error);
+          console.error('Error selecting image:', error);
           continue;
         }
         const imageExists = existingImage && existingImage.length > 0;
@@ -64,9 +65,9 @@ async function processPlaylistsAndImages(playlists: any[], userId: string, spoti
           } else {
             // Update the existing image URL
             console.log(`Playlist ${playlist.name} has a different CDN URL, updating`);
-            await supabaseAdmin
+            await supabase
               .from('images')
-              .update({ url: coverUrl })
+              .update({ url: coverUrl, stack_auth_user_id: stackUserId, })
               .eq('id', existingImage[0].id);
           }
         } else {
@@ -75,7 +76,7 @@ async function processPlaylistsAndImages(playlists: any[], userId: string, spoti
           const image_id = uuidv4();
           
           // Insert image into Supabase
-          const { data: imageData, error: imageError } = await supabaseAdmin
+          const { data: imageData, error: imageError } = await supabase
             .from('images')
             .upsert({
               id: image_id,
@@ -84,19 +85,20 @@ async function processPlaylistsAndImages(playlists: any[], userId: string, spoti
               url: coverUrl,
               type: 'upload', // Existing Spotify covers are considered 'upload' type
               spotify_image_id: imageId,
+              stack_auth_user_id: stackUserId,
             })
             .select()
             .single();
             
           if (imageError) {
-            console.error('Error upserting image:', imageError);
+            console.error('Error inserting new image:', imageError);
             continue;
           }
           
           // Update playlist with current_cover reference
-          await supabaseAdmin
+          await supabase
             .from('playlists')
-            .update({ current_cover: imageData.id })
+            .update({ current_cover: imageData.id, stack_auth_user_id: stackUserId })
             .eq('id', playlistData.id);
         }
       } else {
@@ -116,7 +118,7 @@ async function processPlaylistsAndImages(playlists: any[], userId: string, spoti
             const imageId = getSpotifyImageId(coverUrl);
             
             // Check if cover already exists
-            const { data: existingImage } = await supabaseAdmin
+            const { data: existingImage } = await supabase
               .from('images')
               .select('id, url')
               .eq('spotify_image_id', imageId)
@@ -125,15 +127,15 @@ async function processPlaylistsAndImages(playlists: any[], userId: string, spoti
             // Handle existing image or create new one
             if (existingImage) {
               if (existingImage.url !== coverUrl) {
-                await supabaseAdmin
+                await supabase
                   .from('images')
-                  .update({ url: coverUrl })
+                  .update({ url: coverUrl, stack_auth_user_id: stackUserId })
                   .eq('id', existingImage.id);
               }
             } else {
               const image_id = uuidv4();
               
-              const { data: imageData, error: imageError } = await supabaseAdmin
+              const { data: imageData, error: imageError } = await supabase
                 .from('images')
                 .upsert({
                   id: image_id,
@@ -142,6 +144,7 @@ async function processPlaylistsAndImages(playlists: any[], userId: string, spoti
                   url: coverUrl,
                   type: 'upload',
                   spotify_image_id: imageId,
+                  stack_auth_user_id: stackUserId,
                 })
                 .select()
                 .single();
@@ -152,9 +155,9 @@ async function processPlaylistsAndImages(playlists: any[], userId: string, spoti
               }
               
               // Update playlist with current_cover reference
-              await supabaseAdmin
+              await supabase
                 .from('playlists')
-                .update({ current_cover: imageData.id })
+                .update({ current_cover: imageData.id, stack_auth_user_id: stackUserId })
                 .eq('id', playlistData.id);
             }
           }
@@ -184,6 +187,7 @@ export async function POST(request: NextRequest) {
     
     // Get authenticated user from Stack Auth
     const user = await stackServerApp.getUser({ or: 'redirect' });
+    const { id: stackUserId } = user;
     // Get Spotify access token from the authenticated user
     const account = await user.getConnectedAccount('spotify', { or: 'redirect' });
     const { accessToken } = await account.getAccessToken();
@@ -198,7 +202,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user already exists by spotify_id
-    const { data: existingUser } = await supabaseAdmin
+    const { data: existingUser } = await supabase
       .from('users')
       .select('id')
       .eq('spotify_id', currentUser.id)
@@ -208,7 +212,7 @@ export async function POST(request: NextRequest) {
     const userId = existingUser?.id || uuidv4();
     
     // Process the playlists
-    const result = await processPlaylistsAndImages(playlists, userId, currentUser.id, accessToken);
+    const result = await processPlaylistsAndImages(playlists, userId, currentUser.id, accessToken, stackUserId);
     
     // Return success response
     return NextResponse.json({ 

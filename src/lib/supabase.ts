@@ -24,3 +24,5 @@ export const createSupabaseClient = () => {
     { accessToken: async () => await getSupabaseJwt() || "" }
   );
 }
+
+export const supabase = createSupabaseClient();

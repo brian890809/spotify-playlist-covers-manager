@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
 import { stackServerApp } from '@/stack';
 
@@ -24,23 +24,29 @@ export async function POST(request: NextRequest) {
         }
 
         // Check if user already exists by spotify_id
-        const { data: existingUser } = await supabaseAdmin
+        const { data: existingUser, error: fetchError } = await supabase
             .from('users')
             .select('id')
             .eq('spotify_id', currentUser.id)
             .single();
         
+        console.log("Existing user:", existingUser);
+        if (fetchError) {
+            console.error('Error fetching user:', fetchError);
+            return NextResponse.json({ error: 'Failed to fetch user data' }, { status: 500 });
+        }
+        
         // User ID - either existing or new
         const userId = existingUser?.id || uuidv4();
-    
         // Insert or update user in the Supabase users table
-        const { data: userData, error: userError } = await supabaseAdmin
+        const { data: userData, error: userError } = await supabase
         .from('users')
         .upsert({
             id: userId,
             spotify_id: currentUser.id,
             display_name: currentUser.display_name,
             email: currentUser.email,
+            stack_auth_user_id: user.id
         })
         .select()
         .single();
