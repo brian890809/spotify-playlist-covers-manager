@@ -26,6 +26,7 @@ interface SpotifyImageDialogProps {
     accessToken?: string
     playlistId?: string
     userId?: string
+    onImageChange?: (newImageUrl: string) => void // Add this new prop
 }
 
 const BlockGenAiUse = (
@@ -46,7 +47,8 @@ export default function SpotifyImageDialog({
     playlistId,
     canEdit = false,
     onImageUpload,
-    userId
+    userId,
+    onImageChange
 }: SpotifyImageDialogProps) {
     const [aiPrompt, setAiPrompt] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
@@ -115,6 +117,11 @@ export default function SpotifyImageDialog({
                         // Update the displayed image
                         setDisplayedImage(uploadResult.imageUrl);
 
+                        // Notify parent component about the new image
+                        if (onImageChange) {
+                            onImageChange(uploadResult.imageUrl);
+                        }
+
                         // Add to recent images if needed
                         setRecentImages(prev => [uploadResult.imageUrl, ...prev.slice(0, 3)]);
                     }
@@ -147,6 +154,11 @@ export default function SpotifyImageDialog({
                 throw new Error('Failed to set playlist image');
                 // If there's an error, revert to the original image
             }
+
+            // Notify parent component about the new image
+            if (onImageChange) {
+                onImageChange(imgUrl);
+            }
         } catch (error) {
             console.error('Error updating cover:', error);
             // Revert to the original image on error
@@ -155,6 +167,7 @@ export default function SpotifyImageDialog({
             setIsUploading(false);
         }
     };
+    console.log(displayedImage, 'displayedImage')
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
