@@ -8,6 +8,7 @@ import {
     DialogClose,
     DialogTitle
 } from '@/components/ui/dialog'
+import { TagsInput } from '@/components/ui/tag-input'
 import SelectModel from '@/components/SelectModel'
 import { XIcon, Upload, RefreshCw } from 'lucide-react'
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
@@ -51,6 +52,7 @@ export default function SpotifyImageDialog({
     onImageChange
 }: SpotifyImageDialogProps) {
     const [aiPrompt, setAiPrompt] = useState('');
+    const [keywords, setKeywords] = useState<string[]>([]);
     const [isGenerating, setIsGenerating] = useState(false);
     const [recentImages, setRecentImages] = useState<string[]>([]);
     const [isUploading, setIsUploading] = useState(false);
@@ -103,7 +105,7 @@ export default function SpotifyImageDialog({
             setIsGenerating(true);
             try {
                 // Call the Gemini-powered image generation function
-                const response = await onGenerateImage(aiPrompt, playlistName || "");
+                const response = await onGenerateImage(aiPrompt, playlistName || "", keywords);
 
                 // Now we have the image bytes from the server, save it using our client function
                 if (response && response.imageBytes) {
@@ -167,7 +169,6 @@ export default function SpotifyImageDialog({
             setIsUploading(false);
         }
     };
-    console.log(displayedImage, 'displayedImage')
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -260,6 +261,23 @@ export default function SpotifyImageDialog({
                                 >
                                     {isGenerating ? <RefreshCw className="animate-spin" size={18} /> : 'Generate'}
                                 </button>
+                            </div>
+                            {/* Keywords input */}
+                            <div className="mt-3">
+                                <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">
+                                    Add keywords to enhance your prompt:
+                                </p>
+                                <TagsInput
+                                    value={keywords}
+                                    onValueChange={setKeywords}
+                                    placeholder="Add keywords and press Enter..."
+                                    className="rounded-md border border-gray-300 dark:border-[#333] focus-within:border-[#1DB954] min-h-[42px]"
+                                />
+                                {keywords.length > 0 && (
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-1">
+                                        {keywords.length} {keywords.length === 1 ? 'keyword' : 'keywords'} added
+                                    </p>
+                                )}
                             </div>
                             {/* Model selector dropdown */}
                             {/* <div className="mt-1 flex items-end justify-end">
