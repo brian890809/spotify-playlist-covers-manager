@@ -1,4 +1,4 @@
-import { supabaseAdmin } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 import { getSpotifyImageId } from '@/lib/utils';
 import { stackServerApp } from '@/stack';
 import { NextRequest, NextResponse } from "next/server";
@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
 export async function POST(req: NextRequest) {
     try {
         const user = await stackServerApp.getUser({ or: 'redirect' });
+        const { id: stackId } = user;
         const account = await user.getConnectedAccount('spotify', { or: 'redirect' });
         const { accessToken } = await account.getAccessToken();
         const { imgUrl, playlistId, userId } = await req.json();
@@ -82,7 +83,7 @@ export async function POST(req: NextRequest) {
         }
     
         // 3. Get playlist from Supabase
-        const { data: playlistData, error: playlistError } = await supabaseAdmin
+        const { data: playlistData, error: playlistError } = await supabase
             .from('playlists')
             .select('id')
             .eq('spotify_id', playlistId)
@@ -96,7 +97,7 @@ export async function POST(req: NextRequest) {
         }
     
         // 4. Update the existing image in Supabase
-        const { data: existingImage, error: existingImageError } = await supabaseAdmin
+        const { data: existingImage, error: existingImageError } = await supabase
             .from('images')
             .select('id')
             .eq('spotify_image_id', spotify_image_id)
@@ -110,12 +111,13 @@ export async function POST(req: NextRequest) {
             );
         }
         
-        const { error: updateImageError } = await supabaseAdmin
+        const { error: updateImageError } = await supabase
             .from('images')
             .update({
             url: imageUrl,
             changed_at: new Date().toISOString(),
             spotify_image_id: newImageId,
+            stack_auth_user_id: stackId,
             })
             .eq('id', existingImage.id);
             
@@ -128,9 +130,9 @@ export async function POST(req: NextRequest) {
         }
         
         // Update the playlist's current_cover
-        const { error: updateError } = await supabaseAdmin
+        const { error: updateError } = await supabase
         .from('playlists')
-        .update({ current_cover: existingImage.id })
+        .update({ current_cover: existingImage.id, stack_auth_user_id: stackId })
         .eq('id', playlistData.id);
 
         if (updateError) {
