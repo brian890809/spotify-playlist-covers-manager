@@ -7,10 +7,10 @@ import { stackServerApp } from '@/stack';
  * {
  *  // ... other user metadata
  *  "apiKeys": [
- *    {"llmType": "openai", "apiKey": "sk-1234567890"},
- *    {"llmType": "perplexity", "apiKey": "sk-0987654321"},
- *    {"llmType": "claude", "apiKey": "sk-1122334455"},
- *    {"llmType": "gemini", "apiKey": "sk-5566778899"},
+ *    {"id": "unique-id", "llmType": "openai", "apiKey": "sk-1234567890"},
+ *    {"id": "unique-id-2", "llmType": "perplexity", "apiKey": "sk-0987654321"},
+ *    {"id": "unique-id-3", "llmType": "claude", "apiKey": "sk-1122334455"},
+ *    {"id": "unique-id-4", "llmType": "gemini", "apiKey": "sk-5566778899"},
  *  ]
  * }
  */
@@ -24,11 +24,7 @@ export async function GET(request: NextRequest) {
         }
 
         // Assuming your API keys are stored directly in serverMetadata or a nested object like serverMetadata.apiKeys
-        const apiKeyMetadata = user.serverMetadata?.apiKeys || []; // Or user.serverMetadata?.apiKeys if nested
-
-        if (!apiKeyMetadata.length) {
-            return NextResponse.json({ message: 'API key metadata not found' }, { status: 404 });
-        }
+        const apiKeyMetadata = user.serverMetadata?.apiKeys; // Or user.serverMetadata?.apiKeys if nested
 
         return NextResponse.json(apiKeyMetadata, { status: 200 });
     } catch (error) {

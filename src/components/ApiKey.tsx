@@ -13,23 +13,10 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { ApiKeyEntry } from '@/types/types';
 
-interface ApiKeyEntry {
-    id: string;
-    llmType: string;
-    apiKey: string;
-}
-
-export default function ApiKey() {
-    const [apiKeys, setApiKeys] = useState<ApiKeyEntry[]>([{} as ApiKeyEntry]); // Initialize with an empty entry
-
-    useEffect(() => {
-        const fetchApiKeys = async () => {
-            const keys = await getApiKeys() || [];
-            setApiKeys(keys);
-        };
-        fetchApiKeys();
-    }, []);
+export default function ApiKey({ apiKeys: fetchedKey, saveKey }: { apiKeys: ApiKeyEntry[]; saveKey: (apiKeys: ApiKeyEntry[]) => Promise<void> }) {
+    const [apiKeys, setApiKeys] = useState<ApiKeyEntry[]>(fetchedKey); // Initialize with an empty entry
 
     const handleInputChange = (id: string, field: keyof Omit<ApiKeyEntry, 'id'>, value: string) => {
         setApiKeys(prevKeys =>
@@ -102,7 +89,7 @@ export default function ApiKey() {
             <div className="flex justify-between items-center mt-8">
                 <Button
                     onClick={handleAddRow}
-                    disabled={!apiKeys[apiKeys.length - 1].apiKey}
+                    // disabled={!apiKeys[apiKeys.length - 1].apiKey}
                     className="rounded-full border border-solid border-transparent flex items-center gap-2 bg-transparent hover:bg-gray-100 dark:hover:bg-[#212121] text-gray-800 dark:text-gray-200 font-medium"
                 >
                     <Plus className="h-4 w-4" />
