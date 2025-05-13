@@ -4,6 +4,8 @@ import Sidebar from '@/components/Sidebar';
 import { useEffect, useState } from 'react';
 import { useUser } from '@stackframe/stack';
 import SpotifyDataContext from '@/utils/SpotifyContext';
+import checkIsOnboard from '@/utils/check-onboard';
+import { useRouter } from 'next/navigation';
 
 interface PlaylistImage {
     url: string;
@@ -47,15 +49,22 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
     const [error, setError] = useState<string | null>(null);
     const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'completed' | 'error'>('idle');
 
-    const stackUser = useUser({ or: 'redirect' });
-    const account = stackUser.useConnectedAccount('spotify', { or: 'redirect' });
+    const router = useRouter();
 
     const handleSignOut = () => {
         // For simplicity, just redirect to the homepage
-        window.location.href = '/';
+        router.push('/');
     };
 
     useEffect(() => {
+        const isOnboarded = async () => {
+            const res = await checkIsOnboard();
+            if (!res) {
+                // If not onboarded, redirect to onboarding page
+                router.push('/onboard');
+            }
+        };
+        isOnboarded();
         // This effect only runs once to start the initial data fetching
         const initialFetch = async () => {
             setLoading(true);

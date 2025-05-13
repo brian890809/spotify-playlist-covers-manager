@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Trash2 } from 'lucide-react'; // Optional: for remove button icon
+import { Trash2, Plus } from 'lucide-react';
 import { getApiKeys } from '@/utils/ApiKeys';
 
 import {
@@ -57,20 +57,20 @@ export default function ApiKey() {
     };
 
     return (
-        <div className="container mx-auto p-4 space-y-6">
-            <h1 className="text-2xl font-semibold">Manage LLM API Keys</h1>
+        <div className="w-full max-w-4xl mx-auto p-6 space-y-6 bg-white dark:bg-[#121212] text-gray-900 dark:text-white transition-colors duration-300">
+            <h1 className="text-3xl font-bold mb-6">Manage Your <span className="text-[#1DB954]">LLM API</span> Keys</h1>
 
             <div className="space-y-4">
                 {apiKeys.map((keyEntry) => (
-                    <div key={keyEntry.id} className="flex items-center space-x-2 p-4 border rounded-md">
+                    <div key={keyEntry.id} className="flex items-center space-x-3 p-5 bg-gray-100 dark:bg-[#181818] rounded-lg shadow-sm">
                         <Select
                             value={keyEntry.llmType}
                             onValueChange={(value) => handleInputChange(keyEntry.id, 'llmType', value)}
                         >
-                            <SelectTrigger className="w-[180px]">
+                            <SelectTrigger className="w-[180px] border-gray-300 dark:border-gray-700 bg-white dark:bg-[#212121] dark:hover:bg-[#3d3d3d]">
                                 <SelectValue placeholder="Select LLM" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="bg-white dark:bg-[#212121] dark:text-gray-200">
                                 <SelectItem value="openai">OpenAI</SelectItem>
                                 <SelectItem value="perplexity">Perplexity</SelectItem>
                                 <SelectItem value="claude">Claude</SelectItem>
@@ -82,7 +82,7 @@ export default function ApiKey() {
                             placeholder="Paste your API Key here"
                             value={keyEntry.apiKey}
                             onChange={(e) => handleInputChange(keyEntry.id, 'apiKey', e.target.value)}
-                            className="flex-grow"
+                            className="flex-grow border-gray-300 dark:border-gray-700 bg-white dark:bg-[#212121] focus-visible:ring-[#1DB954]"
                         />
 
                         <Button
@@ -91,18 +91,29 @@ export default function ApiKey() {
                             onClick={() => handleRemoveRow(keyEntry.id)}
                             disabled={apiKeys.length <= 1} // Prevent removing the last row
                             aria-label="Remove API Key"
+                            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                         >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-5 w-5" />
                         </Button>
                     </div>
                 ))}
             </div>
 
-            <div className="flex justify-between items-center mt-4">
-                <Button variant="outline" disabled={!apiKeys[apiKeys.length - 1].apiKey} onClick={handleAddRow}>
+            <div className="flex justify-between items-center mt-8">
+                <Button
+                    onClick={handleAddRow}
+                    disabled={!apiKeys[apiKeys.length - 1].apiKey}
+                    className="rounded-full border border-solid border-transparent flex items-center gap-2 bg-transparent hover:bg-gray-100 dark:hover:bg-[#212121] text-gray-800 dark:text-gray-200 font-medium"
+                >
+                    <Plus className="h-4 w-4" />
                     Add Another Key
                 </Button>
-                <Button onClick={handleSave} disabled={apiKeys.some(key => !key.apiKey)}>
+
+                <Button
+                    onClick={handleSave}
+                    disabled={apiKeys.some(key => !key.apiKey)}
+                    className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-[#1DB954] hover:bg-[#1ed760] text-white font-medium h-10 px-6"
+                >
                     Save Keys
                 </Button>
             </div>
