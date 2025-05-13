@@ -1,7 +1,7 @@
 'use server'
 
 import { GoogleGenAI } from "@google/genai";
-import {generateSpotifyPrompt, generateSpotifyPromptWithoutPlaylistName} from "@/prompts/generate-album-cover";
+import {generateSpotifyPrompt, generateSpotifyPromptWithoutPlaylistName, addKeywordsToPrompt} from "@/prompts/generate-album-cover";
 import compressImageBuffer from "@/lib/compress-image";
 
 const sanitizeBase64 = (base64: string) => {
@@ -12,14 +12,19 @@ const sanitizeBase64 = (base64: string) => {
 const imageToKb = (base64: string) => Math.ceil((base64.length * 6) / 8 / 1000 );
 const maxImageSize = 256; // 256 KB
 
-export async function onGenerateImage(prompt: string, playlistName:string) {
+export async function onGenerateImage(prompt: string, playlistName:string, keywords:string[]) {
     const apiKey = process.env.DEFAULT_GEMINI_API_KEY;
     try {
         // Initialize the Google AI with the provided API key
         const genAI = new GoogleGenAI({apiKey});
-        const genAiPrompt = playlistName !== "" 
+        let genAiPrompt = playlistName !== "" 
             ? generateSpotifyPrompt(playlistName, prompt) 
             : generateSpotifyPromptWithoutPlaylistName(prompt);
+
+
+        if (keywords.length > 0) {
+            genAiPrompt = addKeywordsToPrompt(genAiPrompt, keywords);
+        }
 
         // Get the Generative Model for image generation
         const response = await genAI.models.generateImages({

@@ -181,6 +181,27 @@ export default function DashboardPage() {
                             setPlaylists
                         );
                     }}
+                    onImageChange={(newImageUrl) => {
+                        setSelectedImage(prev => prev ? {...prev, url: newImageUrl} : null);
+                        
+                        // Also update the playlists array if needed
+                        if (selectedImage) {
+                            const playlistId = playlists.find(p => p.name === selectedImage.name)?.id;
+                            if (playlistId) {
+                                setPlaylists(prevPlaylists => 
+                                    prevPlaylists.map(p => {
+                                        if (p.id === playlistId && p.images && p.images.length > 0) {
+                                            return {
+                                                ...p,
+                                                images: [{...p.images[0], url: newImageUrl}, ...p.images.slice(1)]
+                                            };
+                                        }
+                                        return p;
+                                    })
+                                );
+                            }
+                        }
+                    }}
                 />
             )}
         </div>
