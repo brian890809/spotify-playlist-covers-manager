@@ -36,7 +36,6 @@ export default function Settings() {
         const data = await response.json();
         console.log('API keys saved:', data);
     };
-
     return (
         <ApiKey apiKeys={apiKeys} saveKey={saveKey} />
     );

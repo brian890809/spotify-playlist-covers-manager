@@ -24,9 +24,8 @@ export async function GET(request: NextRequest) {
         }
 
         // Assuming your API keys are stored directly in serverMetadata or a nested object like serverMetadata.apiKeys
-        const apiKeyMetadata = user.serverMetadata?.apiKeys; // Or user.serverMetadata?.apiKeys if nested
-
-        return NextResponse.json(apiKeyMetadata, { status: 200 });
+        const apiKeys = user.serverMetadata?.apiKeys; // Or user.serverMetadata?.apiKeys if nested
+        return NextResponse.json(apiKeys, { status: 200 });
     } catch (error) {
         console.error('Error fetching API key metadata:', error);
         return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
