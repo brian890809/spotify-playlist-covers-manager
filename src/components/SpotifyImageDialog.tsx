@@ -56,7 +56,7 @@ export default function SpotifyImageDialog({
     const [isGenerating, setIsGenerating] = useState(false);
     const [recentImages, setRecentImages] = useState<string[]>([]);
     const [isUploading, setIsUploading] = useState(false);
-    const [selectedModel, setSelectedModel] = useState('default');
+    const [selectedModel, setSelectedModel] = useState('__default');
     const [displayedImage, setDisplayedImage] = useState(imageUrl);
 
     const [canUseGenAi, setCanUseGenAi] = useState<boolean>(true) // TODO: Assuming the user can use GenAI by default, will check with API later
@@ -245,7 +245,7 @@ export default function SpotifyImageDialog({
                         <div className="mb-6 relative group">
                             {!canUseGenAi && BlockGenAiUse}
                             <h3 className="text-gray-900 dark:text-white text-lg font-bold mb-2">Create a Cover with AI prompt:</h3>
-                            <div className="flex gap-3">
+                            <div className="flex flex-col gap-2">
                                 <input
                                     type="text"
                                     value={aiPrompt}
@@ -254,23 +254,23 @@ export default function SpotifyImageDialog({
                                     placeholder="Describe the cover you want..."
                                     disabled={!canUseGenAi || !canEdit}
                                 />
-                                <button
-                                    onClick={handleGenerateImage}
-                                    disabled={!canUseGenAi || !aiPrompt}
-                                    className={`flex items-center gap-2 bg-[#1DB954] hover:bg-[#1ed760] text-black font-bold py-2 px-5 rounded-md whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed transition-colors`}
-                                >
-                                    {isGenerating ? <RefreshCw className="animate-spin" size={18} /> : 'Generate'}
-                                </button>
+                                <div className="flex justify-end items-center">
+                                    <SelectModel selectedModel={selectedModel} setSelectedModel={setSelectedModel} />
+                                    <button
+                                        onClick={handleGenerateImage}
+                                        disabled={!canUseGenAi || !aiPrompt}
+                                        className={`ml-2 flex items-center gap-2 bg-[#1DB954] hover:bg-[#1ed760] text-black font-bold py-2 px-5 rounded-md whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed transition-colors`}
+                                    >
+                                        {isGenerating ? <RefreshCw className="animate-spin" size={18} /> : 'Generate'}
+                                    </button>
+                                </div>
                             </div>
                             {/* Keywords input */}
-                            <div className="mt-3">
-                                <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">
-                                    Add keywords to enhance your prompt:
-                                </p>
+                            <div className="mt-2">
                                 <TagsInput
                                     value={keywords}
                                     onValueChange={setKeywords}
-                                    placeholder="Add keywords and press Enter..."
+                                    placeholder="Add keywords to enhance your prompt and press Enter..."
                                     className="rounded-md border border-gray-300 dark:border-[#333] focus-within:border-[#1DB954] min-h-[42px]"
                                 />
                                 {keywords.length > 0 && (
@@ -279,10 +279,6 @@ export default function SpotifyImageDialog({
                                     </p>
                                 )}
                             </div>
-                            {/* Model selector dropdown */}
-                            {/* <div className="mt-1 flex items-end justify-end">
-                                <SelectModel selectedModel={selectedModel} setSelectedModel={setSelectedModel} />
-                            </div> */}
                         </div>
 
                         {/* Upload */}
