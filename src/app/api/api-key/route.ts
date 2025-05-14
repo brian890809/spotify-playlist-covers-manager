@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
         }
 
         // Assuming your API keys are stored directly in serverMetadata or a nested object like serverMetadata.apiKeys
-        const apiKeys = user.serverMetadata?.apiKeys; // Or user.serverMetadata?.apiKeys if nested
+        const apiKeys = user.serverMetadata?.apiKeys || []; // Or user.serverMetadata?.apiKeys if nested
         return NextResponse.json(apiKeys, { status: 200 });
     } catch (error) {
         console.error('Error fetching API key metadata:', error);
@@ -40,12 +40,13 @@ export async function POST(request: NextRequest) {
         if (!user) {
             return NextResponse.json({ message: 'User not authenticated' }, { status: 401 });
         }
-
+        
+        const serverMetadata = user.serverMetadata || {};
         // Assuming you want to update the entire serverMetadata or a specific key within it
         // For example, to store the body under an 'apiKeys' key in serverMetadata:
         await user.update({
             serverMetadata: {
-                // ...user.serverMetadata, // Preserve existing metadata if needed
+                ...serverMetadata, // Preserve existing metadata if needed
                 apiKeys: body, // Or directly body if you want to replace all serverMetadata
             },
         });

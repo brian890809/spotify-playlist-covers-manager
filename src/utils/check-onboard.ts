@@ -12,13 +12,17 @@ const hasApiKey = (user: CurrentServerUser) => {
 
 const checkIsOnboard = async () => {
     const user = await stackServerApp.getUser({ or: 'redirect' });
-
+    const serverMetadata = user.serverMetadata || {};
     if (!hasApiKey(user)) {
-        await user.update({ serverMetadata: { 
+        await user.update({ serverMetadata: {
+            ...serverMetadata, 
             apiKeys: [],
-            onboardingCompleted: true // TODO: remove this line when onboard page is ready
          } });
     }
+    await user.update({ serverMetadata: {
+        ...serverMetadata,
+        onboardingCompleted: true // TODO: remove this line when onboard page is ready
+     } });
 
     // Check if the user has completed onboarding
     const onboardingCompleted = user?.serverMetadata?.onboardingCompleted || false;

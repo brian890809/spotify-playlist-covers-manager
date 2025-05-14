@@ -6,6 +6,7 @@ import ApiKey from '@/components/ApiKey';
 
 export default function Settings() {
     const [apiKeys, setApiKey] = useState<ApiKeyEntry[]>([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchApiKeys = async () => {
@@ -15,6 +16,7 @@ export default function Settings() {
             }
             const data = await response.json();
             setApiKey(data);
+            setLoading(false);
         };
         fetchApiKeys().catch((error) => {
             console.error('Error fetching API keys:', error);
@@ -37,6 +39,13 @@ export default function Settings() {
         console.log('API keys saved:', data);
     };
     return (
-        <ApiKey apiKeys={apiKeys} saveKey={saveKey} />
+        loading ? (
+            <div className="flex items-center justify-center h-full">
+                <p>Loading...</p>
+            </div>
+        ) : (
+            // Render the ApiKey component 
+            <ApiKey apiKeys={apiKeys} saveKey={saveKey} />
+        )
     );
 }

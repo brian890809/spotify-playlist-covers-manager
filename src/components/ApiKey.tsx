@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Trash2, Plus, RotateCcw } from 'lucide-react';
@@ -87,50 +87,62 @@ export default function ApiKey({ apiKeys: fetchedKeys, saveKey }: { apiKeys: Api
 
             {/* Existing Keys Section */}
             <div className="space-y-4">
-                <h2 className="text-xl font-semibold">Your Saved Keys</h2>
+                <h2 className="text-xl font-semibold">Your Keys</h2>
                 {existingKeys.length > 0 ? (
-                    existingKeys.map((keyEntry) => (
-                        <div
-                            key={keyEntry.id}
-                            className={`flex items-center space-x-3 p-5 rounded-lg shadow-sm ${keyEntry.markedForDeletion
-                                ? 'bg-gray-200 dark:bg-[#252525] opacity-60'
-                                : 'bg-gray-100 dark:bg-[#181818]'
-                                }`}
-                        >
-                            <div className="w-[180px] border-gray-300 dark:border-gray-700 bg-white dark:bg-[#212121] rounded-md px-3 py-2 text-sm">
-                                {keyEntry.llmType === 'openai' ? 'OpenAI' :
-                                    keyEntry.llmType === 'perplexity' ? 'Perplexity' :
-                                        keyEntry.llmType === 'claude' ? 'Claude' :
-                                            keyEntry.llmType === 'other' ? 'Other' : keyEntry.llmType}
-                            </div>
-
-                            <div className="flex-grow border border-gray-300 dark:border-gray-700 bg-white dark:bg-[#212121] rounded-md px-3 py-2 text-sm truncate">
-                                {keyEntry.apiKey}
-                            </div>
-
-                            {keyEntry.markedForDeletion ? (
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => handleMarkForDeletion(keyEntry.id, false)}
-                                    aria-label="Undo Delete"
-                                    className="text-[#1DB954] hover:text-[#1ed760] dark:text-[#1DB954] dark:hover:text-[#1ed760]"
-                                >
-                                    <RotateCcw className="h-5 w-5" />
-                                </Button>
-                            ) : (
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => handleMarkForDeletion(keyEntry.id, true)}
-                                    aria-label="Mark for Deletion"
-                                    className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                                >
-                                    <Trash2 className="h-5 w-5" />
-                                </Button>
-                            )}
+                    <div className="grid gap-1">
+                        <div className="grid grid-cols-2 gap-4 text-lg font-medium">
+                            <div>Provider</div>
+                            <div>Key</div>
                         </div>
-                    ))
+                        {existingKeys.map((keyEntry) => (
+                            <div
+                                key={keyEntry.id}
+                                className={`grid grid-cols-2 gap-4 items-center ${keyEntry.markedForDeletion
+                                    ? 'opacity-60'
+                                    : ''
+                                    }`}
+                            >
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        disabled
+                                        value={keyEntry.llmType}
+                                        className="w-full p-1 text-gray-800 border border-none rounded-lg bg-white dark:bg-[#212121] focus:outline-none"
+                                        placeholder="e.g. CLIENT_KEY"
+                                    />
+                                </div>
+                                <div className="relative flex items-center">
+                                    <input
+                                        type="text"
+                                        disabled
+                                        value={keyEntry.apiKey}
+                                        className="w-full p-1 text-gray-800 border border-none rounded-lg bg-white dark:bg-[#212121] focus:outline-none"
+                                    />
+                                    {keyEntry.markedForDeletion ? (
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => handleMarkForDeletion(keyEntry.id, false)}
+                                            aria-label="Undo Delete"
+                                            className="absolute right-2 text-[#1DB954] hover:text-[#1ed760]"
+                                        >
+                                            <RotateCcw className="h-5 w-5" />
+                                        </Button>
+                                    ) : (
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => handleMarkForDeletion(keyEntry.id, true)}
+                                            aria-label="Mark for Deletion"
+                                            className="absolute right-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                                        >
+                                            <Trash2 className="h-5 w-5" />
+                                        </Button>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 ) : (
                     <div className="p-5 bg-gray-100 dark:bg-[#181818] rounded-lg shadow-sm text-center">
                         <p className="text-gray-500 dark:text-gray-400">You don't have any saved API keys yet. Add new keys below.</p>
@@ -140,7 +152,7 @@ export default function ApiKey({ apiKeys: fetchedKeys, saveKey }: { apiKeys: Api
 
             {/* Add New Key Section */}
             <div className="space-y-4">
-                <h2 className="text-xl font-semibold">Add New Key</h2>
+                <h2 className="text-xl font-semibold">Add New Keys</h2>
                 {newKeys.map((keyEntry, index) => (
                     <div key={keyEntry.id} className="flex items-center space-x-3 p-5 bg-gray-100 dark:bg-[#181818] rounded-lg shadow-sm">
                         <Select

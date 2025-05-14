@@ -8,19 +8,22 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select'
-import { getApiKeys } from '@/utils/ApiKeys';
 import { ApiKeyEntry } from '@/types/types';
 
 const SelectModel = ({ selectedModel, setSelectedModel }: {
     selectedModel: string
     setSelectedModel: (model: string) => void
 }) => {
-    const [apiKeys, setApiKeys] = useState<ApiKeyEntry[]>([{ id: 'default', llmType: 'default', apiKey: '' } as ApiKeyEntry]); // Initialize with an empty entry
+    const [apiKeys, setApiKeys] = useState<ApiKeyEntry[]>([]); // Initialize with an empty entry
 
     useEffect(() => {
         const fetchApiKeys = async () => {
-            const keys = await getApiKeys();
-            setApiKeys(prev => [...prev, ...keys]);
+            const response = await fetch('/api/api-key');
+            if (!response.ok) {
+                throw new Error('Get API Key was not ok');
+            }
+            const keys = await response.json();
+            setApiKeys(keys);
         };
         fetchApiKeys();
     }, []);
