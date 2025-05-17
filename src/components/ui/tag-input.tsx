@@ -255,7 +255,7 @@ export const TagsInput = React.forwardRef<HTMLDivElement, TagsInputProps>(
                     ref={ref}
                     dir={dir}
                     className={cn(
-                        "flex items-center flex-wrap gap-1 p-3 rounded-md border transition-colors",
+                        "flex items-center flex-wrap gap-1 p-1 rounded-md border transition-colors",
                         "bg-gray-100 dark:bg-[#2a2a2a] border-gray-300 dark:border-[#333]",
                         "focus-within:border-[#1DB954] focus-within:outline-none",
                         className,

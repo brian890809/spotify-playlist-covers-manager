@@ -8,34 +8,39 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select'
-import { getApiKeys } from '@/utils/ApiKeys';
 import { ApiKeyEntry } from '@/types/types';
 
 const SelectModel = ({ selectedModel, setSelectedModel }: {
     selectedModel: string
     setSelectedModel: (model: string) => void
 }) => {
-    const [apiKeys, setApiKeys] = useState<ApiKeyEntry[]>([{ id: 'default', llmType: 'default', apiKey: '' } as ApiKeyEntry]); // Initialize with an empty entry
+    const [apiKeys, setApiKeys] = useState<ApiKeyEntry[]>([]); // Initialize with an empty entry
 
     useEffect(() => {
         const fetchApiKeys = async () => {
-            const keys = await getApiKeys();
-            setApiKeys(prev => [...prev, ...keys]);
+            const response = await fetch('/api/api-key');
+            if (!response.ok) {
+                throw new Error('Get API Key was not ok');
+            }
+            const keys = await response.json();
+            setApiKeys(keys);
         };
         fetchApiKeys();
     }, []);
-
     return (
         <Select value={selectedModel} onValueChange={setSelectedModel}>
-            <SelectTrigger className="bg-gray-100 dark:bg-[#2a2a2a] text-gray-900 dark:text-white border border-gray-300 dark:border-[#333] focus:border-[#1DB954] mr-0">
-                <SelectValue placeholder="Select model" />
+            <SelectTrigger className="bg-transparent text-sm text-gray-700 dark:text-gray-300 border-0 focus:ring-0 focus:border-0 hover:bg-gray-100 dark:hover:bg-[#333] min-h-0 h-full px-3 mr-0">
+                <SelectValue placeholder="Default" />
             </SelectTrigger>
-            <SelectContent position="item-aligned" className="bg-white dark:bg-[#2a2a2a] border border-gray-300 dark:border-[#333]">
-                {apiKeys.map((key) => (
-                    <SelectItem key={key.id} value={key.llmType}>
-                        {key.llmType}
-                    </SelectItem>
-                ))}
+            <SelectContent position="popper" className="bg-white dark:text-gray-300 dark:bg-[#2a2a2a] border-0 shadow-lg rounded-md text-sm">
+                <>
+                    <SelectItem value="__default">Default</SelectItem>
+                    {apiKeys.map((key) => (
+                        <SelectItem key={key.id} value={key.llmType}>
+                            {key.llmType}
+                        </SelectItem>
+                    ))}
+                </>
             </SelectContent>
         </Select>
     )
