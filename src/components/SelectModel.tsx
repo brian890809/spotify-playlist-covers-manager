@@ -27,7 +27,6 @@ const SelectModel = ({ selectedModel, setSelectedModel }: {
         };
         fetchApiKeys();
     }, []);
-
     return (
         <Select value={selectedModel} onValueChange={setSelectedModel}>
             <SelectTrigger className="bg-transparent text-sm text-gray-700 dark:text-gray-300 border-0 focus:ring-0 focus:border-0 hover:bg-gray-100 dark:hover:bg-[#333] min-h-0 h-full px-3 mr-0">

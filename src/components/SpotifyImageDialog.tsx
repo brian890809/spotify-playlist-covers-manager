@@ -105,7 +105,7 @@ export default function SpotifyImageDialog({
             setIsGenerating(true);
             try {
                 // Call the Gemini-powered image generation function
-                const response = await onGenerateImage(aiPrompt, playlistName || "", keywords);
+                const response = await onGenerateImage(aiPrompt, playlistName || "", keywords, selectedModel);
 
                 // Now we have the image bytes from the server, save it using our client function
                 if (response && response.imageBytes) {
@@ -133,6 +133,7 @@ export default function SpotifyImageDialog({
             } catch (error) {
                 console.error('Error generating image:', error);
             } finally {
+                setKeywords([]);
                 setIsGenerating(false);
             }
         }

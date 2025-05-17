@@ -107,7 +107,7 @@ export default function ApiKey({ apiKeys: fetchedKeys, saveKey }: { apiKeys: Api
                                         type="text"
                                         disabled
                                         value={keyEntry.llmType}
-                                        className="w-full p-1 text-gray-800 border border-none rounded-lg bg-white dark:bg-[#212121] focus:outline-none"
+                                        className="w-full p-1 border border-none rounded-lg bg-white dark:bg-[#212121] focus:outline-none"
                                         placeholder="e.g. CLIENT_KEY"
                                     />
                                 </div>
@@ -116,7 +116,7 @@ export default function ApiKey({ apiKeys: fetchedKeys, saveKey }: { apiKeys: Api
                                         type="text"
                                         disabled
                                         value={keyEntry.apiKey}
-                                        className="w-full p-1 text-gray-800 border border-none rounded-lg bg-white dark:bg-[#212121] focus:outline-none"
+                                        className="w-full p-1 border border-none rounded-lg bg-white dark:bg-[#212121] focus:outline-none"
                                     />
                                     {keyEntry.markedForDeletion ? (
                                         <Button
@@ -164,9 +164,8 @@ export default function ApiKey({ apiKeys: fetchedKeys, saveKey }: { apiKeys: Api
                             </SelectTrigger>
                             <SelectContent className="bg-white dark:bg-[#212121] dark:text-gray-200">
                                 <SelectItem value="openai">OpenAI</SelectItem>
-                                <SelectItem value="perplexity">Perplexity</SelectItem>
                                 <SelectItem value="claude">Claude</SelectItem>
-                                <SelectItem value="other">Other</SelectItem>
+                                <SelectItem value="freepik">Freepik</SelectItem>
                             </SelectContent>
                         </Select>
 
