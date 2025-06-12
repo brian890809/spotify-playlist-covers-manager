@@ -58,36 +58,25 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
 
     useEffect(() => {
         const isOnboarded = async () => {
-            try {
-                const res = await checkIsOnboard();
-                if (!res) {
-                    // If not onboarded, redirect to onboarding page
-                    router.push('/onboard');
-                }
-            } catch (err) {
-                // If checkIsOnboard fails due to authentication issues, redirect to sign in
-                console.error("Onboarding check error:", err);
-                router.push('/signin');
+            const res = await checkIsOnboard();
+            if (!res) {
+                // If not onboarded, redirect to onboarding page
+                router.push('/onboard');
             }
         };
         isOnboarded();
-        
         // This effect only runs once to start the initial data fetching
         const initialFetch = async () => {
             setLoading(true);
-            
+
             try {
                 // First fetch the user data
                 const userData = await fetch('/api/get-user');
-                
-                // Handle authentication errors - redirect to signin
-                if (userData.status === 401) {
-                    console.log("Authentication required. Redirecting to sign in page.");
-                    router.push('/signin');
-                    return;
-                }
-                
                 if (!userData.ok) {
+                    if (userData.status === 401) {
+                        router.push('/handler/signin');
+                        return;
+                    }
                     throw new Error('Failed to fetch user data');
                 }
 
@@ -115,7 +104,6 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
 
                 const data = await playlistsResponse.json();
                 const receivedPlaylists = data.playlists || [];
-                
                 setPlaylists(receivedPlaylists);
                 setLoading(false);
                 console.log(`Total playlists received: ${data.total}`);
