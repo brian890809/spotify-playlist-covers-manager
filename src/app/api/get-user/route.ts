@@ -5,6 +5,9 @@ import { stackServerApp } from '@/stack';
 export async function GET(request: NextRequest) {
     try {
         const user = await stackServerApp.getUser(); // Remove { or: 'redirect' }
+        if (!user) {
+            throw new Error('User not found');
+        }
         const userUrl = user.profileImageUrl
         const account = await user.getConnectedAccount('spotify', { or: 'redirect' });
         const { accessToken } = await account.getAccessToken();
