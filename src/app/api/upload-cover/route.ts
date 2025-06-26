@@ -3,9 +3,19 @@ import { supabase } from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
 import { getSpotifyImageId } from '@/lib/utils';
 import { stackServerApp } from '@/stack';
+import { uploadToS3 } from '@/lib/s3-upload';
 
 // Helper function to handle background syncing with Supabase
-async function syncWithSupabase(playlistId: string, userId: string, imageUrl: string, spotify_image_id: string, type: string, stackId: string) {
+async function syncWithSupabase(
+  playlistId: string, 
+  userId: string, 
+  imageUrl: string, 
+  spotify_image_id: string, 
+  type: string, 
+  stackId: string,
+  s3Url?: string,
+  s3Key?: string
+) {
   try {
     // 3. Get playlist and user from Supabase
     const { data: playlistData, error: playlistError } = await supabase
@@ -40,6 +50,8 @@ async function syncWithSupabase(playlistId: string, userId: string, imageUrl: st
         .from('images')
         .update({
           url: imageUrl,
+          s3_url: s3Url,
+          s3_key: s3Key,
           changed_at: new Date().toISOString(),
           stack_auth_user_id: stackId
         })
@@ -67,6 +79,8 @@ async function syncWithSupabase(playlistId: string, userId: string, imageUrl: st
           user_id: userData.id,
           playlist_id: playlistData.id,
           url: imageUrl,
+          s3_url: s3Url,
+          s3_key: s3Key,
           spotify_image_id: spotify_image_id,
           stack_auth_user_id: stackId,
           type: type,
@@ -117,7 +131,11 @@ export async function POST(request: NextRequest) {
     console.log('Base64 length:', base64Image.length);
     console.log('Base64 starts with:', base64Image.substring(0, 30));
 
-    // 1. Upload image to Spotify - send raw base64 string directly
+    // 1. Save to S3 first
+    const imageBuffer = Buffer.from(base64Image, 'base64');
+    const { s3Url, s3Key } = await uploadToS3(imageBuffer, userId, playlistId, type as 'ai' | 'upload' | 'diy');
+
+    // 2. Upload image to Spotify - send raw base64 string directly
     const uploadResponse = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/images`, {
       method: 'PUT',
       headers: {
@@ -149,7 +167,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 2. Fetch the new image URL from Spotify
+    // 3. Fetch the new image URL from Spotify
     const imagesResponse = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/images`, {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
@@ -177,15 +195,15 @@ export async function POST(request: NextRequest) {
 
     // Make sure spotify_image_id is not undefined before passing it to the background task
     if (spotify_image_id) {
-      syncWithSupabase(playlistId, userId, imageUrl, spotify_image_id, type, stackId)
+      syncWithSupabase(playlistId, userId, imageUrl, spotify_image_id, type, stackId, s3Url, s3Key)
         .catch(error => console.error('Error in background sync process:', error));
       // Start the Supabase sync in the background without awaiting it
     } else {
       console.error('Unable to extract spotify_image_id from imageUrl');
     }
 
-    // Return success response with the new image URL immediately
-    return NextResponse.json({ imageUrl });
+    // Return S3 URL for immediate use
+    return NextResponse.json({ imageUrl: s3Url });
     
   } catch (error) {
     console.error('Server error:', error);

@@ -4,6 +4,22 @@ import { supabase } from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
 import { getSpotifyImageId } from '@/lib/utils';
 import { stackServerApp } from '@/stack';
+import { uploadToS3 } from '@/lib/s3-upload';
+
+// Helper function to download image and upload to S3
+const downloadAndUploadToS3 = async (imageUrl: string, userId: string, playlistId: string): Promise<{ s3Url: string; s3Key: string } | null> => {
+  try {
+    const response = await fetch(imageUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch image: ${response.status}`);
+    }
+    const imageBuffer = Buffer.from(await response.arrayBuffer());
+    return await uploadToS3(imageBuffer, userId, playlistId, 'upload');
+  } catch (error) {
+    console.error('Error downloading and uploading image to S3:', error);
+    return null;
+  }
+};
 
 // Helper function to process playlists and images
 async function processPlaylistsAndImages(playlists: any[], userId: string, spotifyId: string, accessToken: string, stackUserId: string) {
@@ -63,17 +79,26 @@ async function processPlaylistsAndImages(playlists: any[], userId: string, spoti
           if (existingImage[0].url === coverUrl) {
             console.log(`Image already exists for ${playlist.name}, skipping upload`);
           } else {
-            // Update the existing image URL
+            // Update the existing image URL and add S3 backup
             console.log(`Playlist ${playlist.name} has a different CDN URL, updating`);
+            const s3Result = await downloadAndUploadToS3(coverUrl, userId, playlist.id);
             await supabase
               .from('images')
-              .update({ url: coverUrl, stack_auth_user_id: stackUserId, })
+              .update({ 
+                url: coverUrl, 
+                s3_url: s3Result?.s3Url,
+                s3_key: s3Result?.s3Key,
+                stack_auth_user_id: stackUserId, 
+              })
               .eq('id', existingImage[0].id);
           }
         } else {
           // Otherwise, we need to create a new image record
           console.log(`Creating new image record for ${playlist.name}`);
           const image_id = uuidv4();
+          
+          // Download and upload to S3
+          const s3Result = await downloadAndUploadToS3(coverUrl, userId, playlist.id);
           
           // Insert image into Supabase
           const { data: imageData, error: imageError } = await supabase
@@ -83,6 +108,8 @@ async function processPlaylistsAndImages(playlists: any[], userId: string, spoti
               user_id: userId,
               playlist_id: playlistData.id,
               url: coverUrl,
+              s3_url: s3Result?.s3Url,
+              s3_key: s3Result?.s3Key,
               type: 'upload', // Existing Spotify covers are considered 'upload' type
               spotify_image_id: imageId,
               stack_auth_user_id: stackUserId,
@@ -127,13 +154,22 @@ async function processPlaylistsAndImages(playlists: any[], userId: string, spoti
             // Handle existing image or create new one
             if (existingImage) {
               if (existingImage.url !== coverUrl) {
+                const s3Result = await downloadAndUploadToS3(coverUrl, userId, playlist.id);
                 await supabase
                   .from('images')
-                  .update({ url: coverUrl, stack_auth_user_id: stackUserId })
+                  .update({ 
+                    url: coverUrl, 
+                    s3_url: s3Result?.s3Url,
+                    s3_key: s3Result?.s3Key,
+                    stack_auth_user_id: stackUserId 
+                  })
                   .eq('id', existingImage.id);
               }
             } else {
               const image_id = uuidv4();
+              
+              // Download and upload to S3
+              const s3Result = await downloadAndUploadToS3(coverUrl, userId, playlist.id);
               
               const { data: imageData, error: imageError } = await supabase
                 .from('images')
@@ -142,6 +178,8 @@ async function processPlaylistsAndImages(playlists: any[], userId: string, spoti
                   user_id: userId,
                   playlist_id: playlistData.id,
                   url: coverUrl,
+                  s3_url: s3Result?.s3Url,
+                  s3_key: s3Result?.s3Key,
                   type: 'upload',
                   spotify_image_id: imageId,
                   stack_auth_user_id: stackUserId,

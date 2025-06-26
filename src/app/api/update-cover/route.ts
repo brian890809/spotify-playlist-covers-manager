@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabase';
 import { getSpotifyImageId } from '@/lib/utils';
 import { stackServerApp } from '@/stack';
 import { NextRequest, NextResponse } from "next/server";
+import { uploadToS3 } from '@/lib/s3-upload';
 
 export async function POST(req: NextRequest) {
     try {
@@ -24,8 +25,13 @@ export async function POST(req: NextRequest) {
             throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
         }
         const buffer = await response.arrayBuffer();
-        const base64Image = Buffer.from(buffer).toString('base64');
-        // 1. Upload image to Spotify - send raw base64 string directly
+        const imageBuffer = Buffer.from(buffer);
+        const base64Image = imageBuffer.toString('base64');
+        
+        // 1. Save to S3 first
+        const { s3Url, s3Key } = await uploadToS3(imageBuffer, userId, playlistId, 'upload');
+        
+        // 2. Upload image to Spotify - send raw base64 string directly
         const uploadResponse = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/images`, {
             method: 'PUT',
             headers: {
@@ -57,7 +63,7 @@ export async function POST(req: NextRequest) {
             );
         }
     
-        // 2. Fetch the new image URL from Spotify
+        // 3. Fetch the new image URL from Spotify
         const imagesResponse = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/images`, {
             headers: {
             'Authorization': `Bearer ${accessToken}`,
@@ -82,7 +88,7 @@ export async function POST(req: NextRequest) {
             );
         }
     
-        // 3. Get playlist from Supabase
+        // 4. Get playlist from Supabase
         const { data: playlistData, error: playlistError } = await supabase
             .from('playlists')
             .select('id')
@@ -96,7 +102,7 @@ export async function POST(req: NextRequest) {
             );
         }
     
-        // 4. Update the existing image in Supabase
+        // 5. Update the existing image in Supabase
         const { data: existingImage, error: existingImageError } = await supabase
             .from('images')
             .select('id')
@@ -115,6 +121,8 @@ export async function POST(req: NextRequest) {
             .from('images')
             .update({
             url: imageUrl,
+            s3_url: s3Url,
+            s3_key: s3Key,
             changed_at: new Date().toISOString(),
             spotify_image_id: newImageId,
             stack_auth_user_id: stackId,

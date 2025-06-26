@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
     // Playlist found, proceed...
     let query = supabase
       .from('images')
-      .select('url, changed_at')
+      .select('url, s3_url, changed_at')
       .eq('user_id', userData.id)
       .eq('playlist_id', playListData.id)
       .order('changed_at', { ascending: false })
@@ -80,8 +80,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ images: [] });
     }
     
-    // Extract just the image URLs from the data
-    const images = data.map((item) => item.url);
+    // Extract image URLs with S3 priority
+    const images = data.map((item) => item.s3_url || item.url);
     
     return NextResponse.json({ images });
   } catch (error: any) {
